@@ -30,49 +30,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accountStatus, setAccountStatus] = useState<string | null>(null);
 
   const checkRole = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    setIsAdmin(data?.some((r) => r.role === "admin") ?? false);
+    try {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      setIsAdmin(data?.some((r) => r.role === "admin") ?? false);
+    } catch {
+      setIsAdmin(false);
+    }
   };
 
   const checkAccountStatus = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("account_status")
-      .eq("user_id", userId)
-      .single();
-    setAccountStatus(data?.account_status ?? null);
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("account_status")
+        .eq("user_id", userId)
+        .single();
+      setAccountStatus(data?.account_status ?? null);
+    } catch {
+      setAccountStatus(null);
+    }
   };
 
   useEffect(() => {
+    let mounted = true;
+
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        if (!mounted) return;
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          await checkRole(session.user.id);
-          await checkAccountStatus(session.user.id);
+          // Use setTimeout to avoid Supabase client deadlock
+          setTimeout(async () => {
+            if (!mounted) return;
+            await Promise.all([
+              checkRole(session.user.id),
+              checkAccountStatus(session.user.id),
+            ]);
+            if (mounted) setLoading(false);
+          }, 0);
         } else {
           setIsAdmin(false);
           setAccountStatus(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
+    // Then get the initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        checkRole(session.user.id);
-        checkAccountStatus(session.user.id);
+        Promise.all([
+          checkRole(session.user.id),
+          checkAccountStatus(session.user.id),
+        ]).finally(() => {
+          if (mounted) setLoading(false);
+        });
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
