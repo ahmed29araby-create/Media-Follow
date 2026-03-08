@@ -106,7 +106,7 @@ export default function PlanCards({ selectedPlanId, onSelectPlan, hasPendingPaym
     <div className="space-y-4">
       <h2 className="text-lg font-bold text-foreground">اختر الباقة المناسبة</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {PLANS.map((plan) => {
+        {PLANS.filter(plan => !hiddenPlans.includes(plan.id)).map((plan) => {
           const isSelected = selectedPlanId === plan.id;
           const displayPrice = getPrice(plan);
           return (
