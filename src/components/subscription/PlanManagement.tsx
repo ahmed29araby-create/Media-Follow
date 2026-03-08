@@ -337,6 +337,16 @@ export default function PlanManagement() {
                             <TrendingDown className="h-3 w-3" />
                           </Button>
                         </div>
+
+                        <Button
+                          size="sm"
+                          variant={isHidden ? "default" : "secondary"}
+                          className="w-full h-7 text-[10px] gap-1"
+                          onClick={() => togglePlanVisibility(plan.id)}
+                        >
+                          {isHidden ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                          {isHidden ? "إظهار الباقة" : "إخفاء الباقة"}
+                        </Button>
                       </>
                     )}
                   </CardContent>
