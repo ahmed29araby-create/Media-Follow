@@ -36,6 +36,19 @@ export default function SuperAdminDashboard() {
 
   // Details dialog
   const [detailsOrg, setDetailsOrg] = useState<Organization | null>(null);
+  const [memberCount, setMemberCount] = useState<number | null>(null);
+
+  // Fetch member count when details org changes
+  useEffect(() => {
+    if (!detailsOrg) { setMemberCount(null); return; }
+    (async () => {
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", detailsOrg.id);
+      setMemberCount(count ?? 0);
+    })();
+  }, [detailsOrg]);
 
   // Delete confirmation
   const [deleteOrg, setDeleteOrg] = useState<Organization | null>(null);
