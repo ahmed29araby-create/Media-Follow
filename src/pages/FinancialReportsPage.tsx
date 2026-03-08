@@ -178,8 +178,8 @@ export default function FinancialReportsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground">{activeSubs.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">من أصل {subscriptions.length}</p>
+            <div className="text-3xl font-bold text-foreground">{activeSubs}</div>
+            <p className="text-xs text-muted-foreground mt-1">من أصل {totalOrgs} شركة</p>
           </CardContent>
         </Card>
 
