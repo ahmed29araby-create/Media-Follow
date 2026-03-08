@@ -14,6 +14,7 @@ export default function AuthPage() {
   const [displayName, setDisplayName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -22,9 +23,30 @@ export default function AuthPage() {
     if (user) navigate("/dashboard", { replace: true });
   }, [user, navigate]);
 
+  const normalizedEmail = email.trim().toLowerCase();
+
+  const handleForgotPassword = async () => {
+    if (!normalizedEmail) {
+      toast.error("اكتب البريد الإلكتروني أولاً");
+      return;
+    }
+
+    setResetLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني");
+    }
+
+    setResetLoading(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const normalizedEmail = email.trim().toLowerCase();
 
     if (isSignUp && password.length < 12) {
       toast.error("كلمة المرور يجب أن تكون 12 حرف على الأقل");
@@ -68,7 +90,7 @@ export default function AuthPage() {
         } else {
           toast.error(
             error.message === "Invalid login credentials"
-              ? "بيانات الدخول غير صحيحة (راجع البريد وكلمة المرور)"
+              ? "بيانات الدخول غير صحيحة. لو ناسي كلمة المرور اضغط (نسيت كلمة المرور)"
               : error.message
           );
         }
@@ -157,9 +179,17 @@ export default function AuthPage() {
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {isSignUp ? "يجب أن تكون 12 حرف على الأقل" : ""}
-            </p>
+            {!isSignUp && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                onClick={handleForgotPassword}
+                disabled={resetLoading}
+              >
+                {resetLoading ? "جاري الإرسال..." : "نسيت كلمة المرور؟"}
+              </Button>
+            )}
           </div>
           <Button type="submit" className="w-full h-11" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
