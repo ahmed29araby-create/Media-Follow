@@ -9,8 +9,10 @@ import { Loader2, Eye, EyeOff, Zap } from "lucide-react";
 export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,11 +22,29 @@ export default function AuthPage() {
     }
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast.error(error.message === "Invalid login credentials" 
-        ? "بيانات الدخول غير صحيحة" 
-        : error.message);
+    if (isSignUp) {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { display_name: displayName || email.split("@")[0] },
+          emailRedirectTo: window.location.origin,
+        },
+      });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("تم إنشاء الحساب! تحقق من بريدك الإلكتروني لتأكيد الحساب.");
+      }
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast.error(
+          error.message === "Invalid login credentials"
+            ? "بيانات الدخول غير صحيحة"
+            : error.message
+        );
+      }
     }
     setLoading(false);
   };
@@ -49,10 +69,28 @@ export default function AuthPage() {
           </div>
         </div>
 
-        <h2 className="text-lg font-semibold text-foreground mb-1">تسجيل الدخول</h2>
-        <p className="text-sm text-muted-foreground mb-6">أدخل بياناتك للمتابعة</p>
+        <h2 className="text-lg font-semibold text-foreground mb-1">
+          {isSignUp ? "إنشاء حساب جديد" : "تسجيل الدخول"}
+        </h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          {isSignUp ? "أدخل بياناتك لإنشاء حساب" : "أدخل بياناتك للمتابعة"}
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {isSignUp && (
+            <div className="space-y-2">
+              <Label htmlFor="displayName">الاسم الكامل</Label>
+              <Input
+                id="displayName"
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="مثال: أحمد محمد"
+                required
+                dir="rtl"
+              />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="email">البريد الإلكتروني</Label>
             <Input
@@ -94,11 +132,21 @@ export default function AuthPage() {
           </div>
           <Button type="submit" className="w-full h-11" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            تسجيل الدخول
+            {isSignUp ? "إنشاء حساب" : "تسجيل الدخول"}
           </Button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-border">
+        <div className="mt-6">
+          <Button
+            variant="ghost"
+            className="w-full text-sm"
+            onClick={() => setIsSignUp(!isSignUp)}
+          >
+            {isSignUp ? "لديك حساب بالفعل؟ تسجيل الدخول" : "ليس لديك حساب؟ إنشاء حساب جديد"}
+          </Button>
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-border">
           <p className="text-xs text-center text-muted-foreground">
             تواصل مع مسؤول المنصة للحصول على حساب
           </p>
