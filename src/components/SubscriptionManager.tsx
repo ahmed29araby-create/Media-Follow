@@ -380,6 +380,10 @@ export default function SubscriptionManager({ organizationId, organizationName }
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label>كلمة المرور (تأكيد)</Label>
+              <Input type="password" value={grantPassword} onChange={(e) => setGrantPassword(e.target.value)} placeholder="أدخل كلمة مرور حسابك" />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setGrantOpen(false)}>إلغاء</Button>
