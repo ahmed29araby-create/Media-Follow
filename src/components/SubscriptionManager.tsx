@@ -123,14 +123,15 @@ export default function SubscriptionManager({ organizationId, organizationName }
 
     if (subscription && new Date(subscription.ends_at) > new Date()) {
       // Active subscription exists — extend it
+      const totalMonths = subscription.months + months;
       const newEnd = new Date(subscription.ends_at);
       newEnd.setMonth(newEnd.getMonth() + months);
       const { error: updateErr } = await supabase
         .from("subscriptions")
         .update({
           ends_at: newEnd.toISOString(),
-          months: subscription.months + months,
-          notes: `${subscription.notes || ""}\n+ تجديد ${months} شهر مجاني من صاحب الموقع`,
+          months: totalMonths,
+          notes: `تم دفع الاشتراك من صاحب الموقع لمدة ${totalMonths} شهر`,
         })
         .eq("id", subscription.id);
       error = updateErr;
@@ -147,7 +148,7 @@ export default function SubscriptionManager({ organizationId, organizationName }
         amount: 0,
         granted_by: user.id,
         payment_method: "free_grant",
-        notes: `تم الدفع من صاحب الموقع لمدة ${months} شهر`,
+        notes: `تم دفع الاشتراك من صاحب الموقع لمدة ${months} شهر`,
       });
       error = insertErr;
     }
