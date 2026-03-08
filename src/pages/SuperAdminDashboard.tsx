@@ -121,10 +121,13 @@ export default function SuperAdminDashboard() {
   };
 
   const stats = [
-    { label: "إجمالي الشركات", value: orgs.length, icon: Building2, accent: "text-primary", bg: "bg-primary/10" },
-    { label: "شركات نشطة", value: orgs.filter(o => o.is_active).length, icon: Activity, accent: "text-success", bg: "bg-success/10" },
-    { label: "شركات معطلة", value: orgs.filter(o => !o.is_active).length, icon: XCircle, accent: "text-destructive", bg: "bg-destructive/10" },
+    { label: "إجمالي الشركات", value: orgs.length, icon: Building2, accent: "text-primary", bg: "bg-primary/10", filterKey: "all" as const },
+    { label: "شركات نشطة", value: orgs.filter(o => o.is_active).length, icon: Activity, accent: "text-success", bg: "bg-success/10", filterKey: "active" as const },
+    { label: "شركات معطلة", value: orgs.filter(o => !o.is_active).length, icon: XCircle, accent: "text-destructive", bg: "bg-destructive/10", filterKey: "disabled" as const },
   ];
+
+  const filteredOrgs = filter === "all" ? orgs : filter === "active" ? orgs.filter(o => o.is_active) : orgs.filter(o => !o.is_active);
+  const filterTitle = filter === "all" ? "الشركات المسجلة" : filter === "active" ? "الشركات النشطة" : "الشركات المعطلة";
 
   return (
     <div className="p-6 space-y-8" dir="rtl">
