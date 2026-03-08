@@ -215,6 +215,11 @@ export default function SuperAdminDashboard() {
                 <p className="text-xs text-muted-foreground bg-secondary/50 p-3 rounded-lg">
                   بعد الإنشاء، أرسل البريد الإلكتروني وكلمة المرور لمسؤول الشركة لتسجيل الدخول.
                 </p>
+                <div className="space-y-2">
+                  <Label>كود الإحالة (اختياري)</Label>
+                  <Input value={form.referral_code} onChange={e => setForm(f => ({ ...f, referral_code: e.target.value }))} placeholder="كود الإحالة إن وُجد" dir="ltr" className="text-left" />
+                  <p className="text-xs text-muted-foreground">إذا تم إنشاء الشركة عبر رابط إحالة، أدخل الكود هنا</p>
+                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
