@@ -6,6 +6,34 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+type OAuthState = {
+  userId: string;
+  origin?: string;
+};
+
+function normalizeOrigin(origin: string | null): string | undefined {
+  if (!origin) return undefined;
+
+  try {
+    const parsed = new URL(origin);
+    const host = parsed.hostname.toLowerCase();
+    const isLocalhost = host === "localhost" || host === "127.0.0.1";
+    const isAllowedHost =
+      isLocalhost || host.endsWith(".lovable.app") || host.endsWith(".lovableproject.com");
+    const isAllowedProtocol = parsed.protocol === "https:" || (isLocalhost && parsed.protocol === "http:");
+
+    if (!isAllowedHost || !isAllowedProtocol) return undefined;
+
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return undefined;
+  }
+}
+
+function encodeState(state: OAuthState): string {
+  return btoa(JSON.stringify(state));
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -28,7 +56,10 @@ Deno.serve(async (req) => {
     const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await userClient.auth.getUser();
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -56,7 +87,9 @@ Deno.serve(async (req) => {
       try {
         const parsed = JSON.parse(clientId);
         clientId = parsed?.web?.client_id || parsed?.installed?.client_id || clientId;
-      } catch { /* not JSON, use as-is */ }
+      } catch {
+        /* not JSON, use as-is */
+      }
     }
     console.log("Using client ID prefix:", clientId?.substring(0, 10));
     if (!clientId || !clientId.includes(".apps.googleusercontent.com")) {
@@ -66,26 +99,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    let clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET")?.trim();
-    // Handle case where user pasted full JSON credentials into secret too
-    if (clientSecret && clientSecret.startsWith("{")) {
-      try {
-        const parsed = JSON.parse(clientSecret);
-        clientSecret = parsed?.web?.client_secret || parsed?.installed?.client_secret || clientSecret;
-      } catch { /* not JSON, use as-is */ }
-    }
-
     const redirectUri = `${supabaseUrl}/functions/v1/google-drive-callback`;
+    const origin = normalizeOrigin(req.headers.get("origin"));
+    const state = encodeState({ userId: user.id, origin });
 
     // Build Google OAuth URL
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
       response_type: "code",
-      scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
+      scope:
+        "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
       access_type: "offline",
       prompt: "consent",
-      state: user.id, // Pass user ID in state for verification
+      state,
     });
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
