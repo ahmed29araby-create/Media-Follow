@@ -59,8 +59,37 @@ export default function AuthPage() {
     }
   }, [lockoutUntil]);
 
+  useEffect(() => {
+    if (!otpExpiresAt) return;
+
+    const tick = () => {
+      const remaining = Math.ceil((otpExpiresAt - Date.now()) / 1000);
+      if (remaining <= 0) {
+        setOtpExpiresAt(null);
+        setOtpRemaining(0);
+        if (otpTimer.current) clearInterval(otpTimer.current);
+      } else {
+        setOtpRemaining(remaining);
+      }
+    };
+
+    tick();
+    otpTimer.current = setInterval(tick, 1000);
+
+    return () => {
+      if (otpTimer.current) clearInterval(otpTimer.current);
+    };
+  }, [otpExpiresAt]);
+
+  const formatCountdown = (seconds: number) => {
+    const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const secs = (seconds % 60).toString().padStart(2, "0");
+    return `${mins}:${secs}`;
+  };
+
   const normalizedEmail = email.trim().toLowerCase();
   const isLockedOut = lockoutUntil !== null && Date.now() < lockoutUntil;
+  const isOtpExpired = otpExpiresAt !== null && Date.now() > otpExpiresAt;
 
   const handleLoginFailure = () => {
     const attempts = failedAttempts + 1;
