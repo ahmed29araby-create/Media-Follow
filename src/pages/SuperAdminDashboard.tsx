@@ -281,7 +281,7 @@ export default function SuperAdminDashboard() {
 
       {/* Details Dialog */}
       <Dialog open={!!detailsOrg} onOpenChange={(open) => { if (!open) setDetailsOrg(null); }}>
-        <DialogContent className="bg-card border-border max-w-md" dir="rtl">
+        <DialogContent className="bg-card border-border max-w-md max-h-[85vh] overflow-y-auto" dir="rtl">
           <DialogHeader>
             <DialogTitle className="text-foreground flex items-center gap-2">
               <Building2 className="h-5 w-5 text-primary" />
