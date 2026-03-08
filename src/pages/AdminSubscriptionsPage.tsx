@@ -13,6 +13,7 @@ import {
   Phone, Image as ImageIcon, Building2, Lock,
 } from "lucide-react";
 import PlanManagement from "@/components/subscription/PlanManagement";
+import ReferralSettings from "@/components/referral/ReferralSettings";
 
 interface PaymentRequest {
   id: string;
