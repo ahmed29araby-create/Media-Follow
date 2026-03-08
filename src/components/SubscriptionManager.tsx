@@ -99,9 +99,24 @@ export default function SubscriptionManager({ organizationId, organizationName }
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
 
+  const verifyPassword = async (password: string): Promise<boolean> => {
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (!currentUser?.email) return false;
+    const { error } = await supabase.auth.signInWithPassword({
+      email: currentUser.email,
+      password,
+    });
+    return !error;
+  };
+
   const handleGrantFree = async () => {
     if (!user) return;
+    if (!grantPassword) { toast.error("يرجى إدخال كلمة المرور"); return; }
     setGranting(true);
+
+    const valid = await verifyPassword(grantPassword);
+    if (!valid) { toast.error("كلمة المرور غير صحيحة"); setGranting(false); return; }
+
     const months = parseInt(grantMonths);
 
     let error: any = null;
