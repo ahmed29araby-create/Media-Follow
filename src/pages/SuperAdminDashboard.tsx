@@ -204,7 +204,11 @@ export default function SuperAdminDashboard() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {stats.map(s => (
-          <Card key={s.label} className="glass-panel border-border/50 hover:border-primary/30 transition-colors">
+          <Card
+            key={s.label}
+            className={`glass-panel border-border/50 hover:border-primary/30 transition-colors cursor-pointer ${filter === s.filterKey ? "ring-2 ring-primary border-primary/40" : ""}`}
+            onClick={() => setFilter(s.filterKey)}
+          >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{s.label}</CardTitle>
               <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${s.bg}`}>
