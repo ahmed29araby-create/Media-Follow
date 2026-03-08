@@ -177,10 +177,10 @@ export default function SubscriptionManager({ organizationId, organizationName }
     const valid = await verifyPassword(cancelPassword);
     if (!valid) { toast.error("كلمة المرور غير صحيحة"); setCancelling(false); return; }
 
-    const { error } = await supabase
-      .from("subscriptions")
-      .update({ ends_at: new Date().toISOString(), notes: `${subscription.notes || ""}\n⛔ تم إلغاء الاشتراك يدوياً` })
-      .eq("id", subscription.id);
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({ ends_at: new Date().toISOString(), notes: `⛔ تم إلغاء الاشتراك يدوياً` })
+        .eq("id", subscription.id);
 
     await supabase.from("organizations").update({ is_active: false }).eq("id", organizationId);
 
@@ -203,13 +203,14 @@ export default function SubscriptionManager({ organizationId, organizationName }
       // Extend existing active subscription
       const newEnd = new Date(subscription.ends_at);
       newEnd.setMonth(newEnd.getMonth() + payment.months);
+      const totalMonths = subscription.months + payment.months;
       const { error } = await supabase
         .from("subscriptions")
         .update({
           ends_at: newEnd.toISOString(),
-          months: subscription.months + payment.months,
+          months: totalMonths,
           amount: Number(subscription.amount) + payment.amount,
-          notes: `${subscription.notes || ""}\n+ تجديد ${payment.months} شهر — ${note}`,
+          notes: `تم دفع الاشتراك عبر فودافون كاش لمدة ${totalMonths} شهر — رقم المرسل: ${payment.sender_phone || "غير محدد"}`,
         })
         .eq("id", subscription.id);
       subError = error;
