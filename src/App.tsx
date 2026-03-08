@@ -48,6 +48,7 @@ function ProtectedRoutes() {
         {isAdmin && <Route path="/team" element={<AdminTeamPage />} />}
         {isAdmin && <Route path="/moderation" element={<ModerationPage />} />}
         {(isAdmin || isSuperAdmin) && <Route path="/settings" element={<SettingsPage />} />}
+        <Route path="/privacy" element={<PrivacyPage />} />
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
