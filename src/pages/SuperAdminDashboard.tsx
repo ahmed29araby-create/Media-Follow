@@ -36,6 +36,19 @@ export default function SuperAdminDashboard() {
 
   // Details dialog
   const [detailsOrg, setDetailsOrg] = useState<Organization | null>(null);
+  const [memberCount, setMemberCount] = useState<number | null>(null);
+
+  // Fetch member count when details org changes
+  useEffect(() => {
+    if (!detailsOrg) { setMemberCount(null); return; }
+    (async () => {
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", detailsOrg.id);
+      setMemberCount(count ?? 0);
+    })();
+  }, [detailsOrg]);
 
   // Delete confirmation
   const [deleteOrg, setDeleteOrg] = useState<Organization | null>(null);
@@ -304,6 +317,13 @@ export default function SuperAdminDashboard() {
                   <span className="text-sm font-semibold text-primary flex items-center gap-1.5">
                     <CalendarDays className="h-4 w-4" />
                     {formatDate(detailsOrg.created_at)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">عدد أعضاء الفريق</span>
+                  <span className="text-sm font-semibold text-primary flex items-center gap-1.5">
+                    <Users className="h-4 w-4" />
+                    {memberCount !== null ? memberCount : "..."}
                   </span>
                 </div>
               </div>
