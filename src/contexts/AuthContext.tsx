@@ -69,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       else setRole(null);
 
       setAccountStatus(profileRes.data?.account_status ?? null);
+      setDisplayName(profileRes.data?.display_name ?? null);
       const orgId = profileRes.data?.organization_id ?? null;
       setOrganizationId(orgId);
 
