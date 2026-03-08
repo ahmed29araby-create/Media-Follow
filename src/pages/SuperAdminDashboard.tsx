@@ -113,10 +113,14 @@ export default function SuperAdminDashboard() {
 
   const handleToggle = async () => {
     if (!toggleOrg || !togglePassword) return;
+    if (toggleOrg.is_active && !toggleReason.trim()) {
+      toast.error("يرجى كتابة سبب التعطيل");
+      return;
+    }
     setToggling(true);
     const newStatus = !toggleOrg.is_active;
     const { data, error } = await supabase.functions.invoke("toggle-organization", {
-      body: { organization_id: toggleOrg.id, password: togglePassword, is_active: newStatus },
+      body: { organization_id: toggleOrg.id, password: togglePassword, is_active: newStatus, disable_reason: toggleReason.trim() || null },
     });
     if (error || data?.error) {
       toast.error(data?.error || error?.message || "فشلت العملية");
@@ -125,6 +129,7 @@ export default function SuperAdminDashboard() {
       setToggleOrg(null);
       setDetailsOrg(null);
       setTogglePassword("");
+      setToggleReason("");
       fetchOrgs();
     }
     setToggling(false);
