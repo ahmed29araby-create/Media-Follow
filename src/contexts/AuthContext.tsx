@@ -109,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!nextUser) {
         setRole(null);
         setAccountStatus(null);
+        setDisplayName(null);
         setOrganizationId(null);
         setOrganizationName(null);
         setLoading(false);
