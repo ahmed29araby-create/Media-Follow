@@ -40,7 +40,7 @@ const memberLinks = [
 ];
 
 export default function AppSidebar() {
-  const { user, role, isSuperAdmin, isAdmin, signOut } = useAuth();
+  const { user, role, isSuperAdmin, isAdmin, signOut, organizationName } = useAuth();
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
 
