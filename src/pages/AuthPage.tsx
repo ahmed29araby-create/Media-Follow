@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -24,11 +24,17 @@ export default function AuthPage() {
   const lockoutTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const referralCode = searchParams.get("ref");
   const { user } = useAuth();
 
   useEffect(() => {
     if (user) navigate("/dashboard", { replace: true });
-  }, [user, navigate]);
+    // Store referral code in localStorage for later use during org creation
+    if (referralCode) {
+      localStorage.setItem("referral_code", referralCode);
+    }
+  }, [user, navigate, referralCode]);
 
   // Lockout countdown
   useEffect(() => {

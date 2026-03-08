@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { FolderOpen, Loader2, Link2, Unlink, Mail, CheckCircle2, Phone } from "lucide-react";
+import ReferralCard from "@/components/referral/ReferralCard";
 
 export default function SettingsPage() {
   const { organizationId, organizationName, isSuperAdmin } = useAuth();
@@ -210,6 +211,9 @@ export default function SettingsPage() {
         </div>
         <Button onClick={() => saveSetting("drive_folder_path", driveFolderPath)} disabled={saving}>{saving && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}حفظ الإعدادات</Button>
       </div>
+
+      {/* Referral Card - for org admins */}
+      {!isSuperAdmin && <ReferralCard />}
     </div>
   );
 }

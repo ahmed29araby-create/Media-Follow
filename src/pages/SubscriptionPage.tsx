@@ -11,6 +11,7 @@ import {
   CreditCard, Clock, CheckCircle, XCircle, Upload, Loader2, CalendarDays, Phone, AlertCircle,
 } from "lucide-react";
 import PlanCards, { PLANS, type Plan } from "@/components/subscription/PlanCards";
+import UseCreditsSection from "@/components/referral/UseCreditsSection";
 
 interface Subscription {
   id: string;
@@ -44,6 +45,11 @@ export default function SubscriptionPage() {
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [vodafoneNumber, setVodafoneNumber] = useState("01012345678");
+
+  // Credit usage state
+  const [creditApplied, setCreditApplied] = useState(false);
+  const [creditAmount, setCreditAmount] = useState(0);
+  const [creditIds, setCreditIds] = useState<string[]>([]);
 
   const fetchData = async () => {
     if (!organizationId) return;
@@ -86,42 +92,101 @@ export default function SubscriptionPage() {
     setTimeout(() => document.getElementById("payment-form")?.scrollIntoView({ behavior: "smooth" }), 100);
   };
 
+  const finalPrice = selectedPlan ? (creditApplied ? Math.max(0, selectedPlan.price - creditAmount) : selectedPlan.price) : 0;
+  const isFullyCoveredByCredit = creditApplied && finalPrice === 0;
+
   const handleSubmitPayment = async () => {
     if (!user || !organizationId || !selectedPlan) return;
-    if (!senderPhone.trim()) {
-      toast.error("أدخل رقم الهاتف المُحوَّل منه");
-      return;
-    }
-    if (!screenshotFile) {
-      toast.error("ارفع صورة إيصال التحويل");
-      return;
+
+    // If fully covered by credit, no need for phone/screenshot
+    if (!isFullyCoveredByCredit) {
+      if (!senderPhone.trim()) {
+        toast.error("أدخل رقم الهاتف المُحوَّل منه");
+        return;
+      }
+      if (!screenshotFile) {
+        toast.error("ارفع صورة إيصال التحويل");
+        return;
+      }
     }
 
     setSubmitting(true);
     try {
-      const ext = screenshotFile.name.split(".").pop();
-      const path = `${organizationId}/${Date.now()}.${ext}`;
-      const { error: uploadErr } = await supabase.storage
-        .from("payment_screenshots")
-        .upload(path, screenshotFile);
-      if (uploadErr) throw uploadErr;
+      let screenshotPath: string | null = null;
 
-      const { error: insertErr } = await supabase.from("subscription_payments").insert({
-        organization_id: organizationId,
-        user_id: user.id,
-        months: 1,
-        amount: selectedPlan.price,
-        sender_phone: senderPhone.trim(),
-        screenshot_path: path,
-        status: "pending",
-      });
-      if (insertErr) throw insertErr;
+      if (!isFullyCoveredByCredit && screenshotFile) {
+        const ext = screenshotFile.name.split(".").pop();
+        const path = `${organizationId}/${Date.now()}.${ext}`;
+        const { error: uploadErr } = await supabase.storage
+          .from("payment_screenshots")
+          .upload(path, screenshotFile);
+        if (uploadErr) throw uploadErr;
+        screenshotPath = path;
+      }
 
-      toast.success("تم إرسال طلب الاشتراك بنجاح! في انتظار الموافقة.");
+      // Deduct credits if applied
+      if (creditApplied && creditAmount > 0) {
+        let remainingToDeduct = creditAmount;
+        // Get credits ordered by expiry
+        const { data: creditsData } = await supabase
+          .from("referral_credits")
+          .select("id, remaining")
+          .eq("organization_id", organizationId)
+          .gt("remaining", 0)
+          .order("expires_at", { ascending: true });
+
+        for (const c of (creditsData ?? [])) {
+          if (remainingToDeduct <= 0) break;
+          const deductFromThis = Math.min(Number(c.remaining), remainingToDeduct);
+          await supabase
+            .from("referral_credits")
+            .update({ remaining: Number(c.remaining) - deductFromThis })
+            .eq("id", c.id);
+          remainingToDeduct -= deductFromThis;
+        }
+      }
+
+      if (isFullyCoveredByCredit) {
+        // Auto-approve: create subscription directly
+        const startsAt = new Date();
+        const endsAt = new Date();
+        endsAt.setMonth(endsAt.getMonth() + 1);
+        await supabase.from("subscriptions").insert({
+          organization_id: organizationId,
+          starts_at: startsAt.toISOString(),
+          ends_at: endsAt.toISOString(),
+          months: 1,
+          amount: 0,
+          payment_method: "referral_credit",
+          notes: `تم الدفع بالكامل من رصيد الإحالة — باقة ${selectedPlan.name} (${selectedPlan.price} جنيه)`,
+        });
+        await supabase.from("organizations").update({ is_active: true }).eq("id", organizationId);
+        toast.success("تم تفعيل الاشتراك باستخدام رصيد الإحالة!");
+      } else {
+        // Submit payment request
+        const { error: insertErr } = await supabase.from("subscription_payments").insert({
+          organization_id: organizationId,
+          user_id: user.id,
+          months: 1,
+          amount: finalPrice,
+          sender_phone: senderPhone.trim() || null,
+          screenshot_path: screenshotPath,
+          status: "pending",
+        });
+        if (insertErr) throw insertErr;
+        toast.success(creditApplied
+          ? `تم إرسال طلب الاشتراك بخصم ${creditAmount} جنيه! في انتظار الموافقة.`
+          : "تم إرسال طلب الاشتراك بنجاح! في انتظار الموافقة."
+        );
+      }
+
       setSenderPhone("");
       setScreenshotFile(null);
       setShowPaymentForm(false);
       setSelectedPlan(null);
+      setCreditApplied(false);
+      setCreditAmount(0);
+      setCreditIds([]);
       fetchData();
     } catch (err: any) {
       toast.error(err.message || "حدث خطأ أثناء الإرسال");
@@ -222,62 +287,89 @@ export default function SubscriptionPage() {
         <Card className="border-border/50" id="payment-form">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center justify-between">
-              <span>الدفع عبر فودافون كاش</span>
-              <Badge variant="outline" className="text-primary border-primary/30">
-                {selectedPlan.name} — {selectedPlan.price.toLocaleString()} جنيه
-              </Badge>
+              <span>{isFullyCoveredByCredit ? "الدفع بالرصيد" : "الدفع عبر فودافون كاش"}</span>
+              <div className="flex items-center gap-2">
+                {creditApplied && (
+                  <Badge className="bg-success/15 text-success border-success/30 text-xs">
+                    خصم {creditAmount.toLocaleString()} ج
+                  </Badge>
+                )}
+                <Badge variant="outline" className="text-primary border-primary/30">
+                  {selectedPlan.name} — {creditApplied ? `${finalPrice.toLocaleString()} جنيه` : `${selectedPlan.price.toLocaleString()} جنيه`}
+                </Badge>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-secondary/50 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-medium text-foreground">خطوات الدفع:</p>
-              <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                <li>
-                  حوّل مبلغ <strong className="text-foreground">{selectedPlan.price.toLocaleString()} جنيه</strong> إلى رقم فودافون كاش:
-                </li>
-                <li className="flex items-center gap-2 mr-4">
-                  <Phone className="h-4 w-4 text-primary" />
-                  <span className="font-mono font-bold text-foreground text-lg" dir="ltr">{vodafoneNumber}</span>
-                </li>
-                <li>بعد التحويل، أدخل رقم الهاتف المُحوَّل منه وارفع صورة الإيصال</li>
-              </ol>
-            </div>
+            {/* Use Credits Section */}
+            <UseCreditsSection
+              planPrice={selectedPlan.price}
+              onCreditApplied={(amount, ids) => {
+                setCreditApplied(true);
+                setCreditAmount(amount);
+                setCreditIds(ids);
+              }}
+              onCreditRemoved={() => {
+                setCreditApplied(false);
+                setCreditAmount(0);
+                setCreditIds([]);
+              }}
+              applied={creditApplied}
+            />
 
-            <div className="space-y-2">
-              <Label>رقم الهاتف المُحوَّل منه</Label>
-              <Input
-                value={senderPhone}
-                onChange={(e) => setSenderPhone(e.target.value)}
-                placeholder="01xxxxxxxxx"
-                dir="ltr"
-                className="text-left"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>صورة إيصال التحويل</Label>
-              <label className="block cursor-pointer">
-                <div className="flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border/50 p-4 hover:border-primary/30 transition-colors">
-                  <Upload className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
-                    {screenshotFile ? screenshotFile.name : "اختر صورة"}
-                  </span>
+            {!isFullyCoveredByCredit && (
+              <>
+                <div className="bg-secondary/50 rounded-lg p-4 space-y-2">
+                  <p className="text-sm font-medium text-foreground">خطوات الدفع:</p>
+                  <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>
+                      حوّل مبلغ <strong className="text-foreground">{finalPrice.toLocaleString()} جنيه</strong> إلى رقم فودافون كاش:
+                    </li>
+                    <li className="flex items-center gap-2 mr-4">
+                      <Phone className="h-4 w-4 text-primary" />
+                      <span className="font-mono font-bold text-foreground text-lg" dir="ltr">{vodafoneNumber}</span>
+                    </li>
+                    <li>بعد التحويل، أدخل رقم الهاتف المُحوَّل منه وارفع صورة الإيصال</li>
+                  </ol>
                 </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => setScreenshotFile(e.target.files?.[0] || null)}
-                />
-              </label>
-            </div>
+
+                <div className="space-y-2">
+                  <Label>رقم الهاتف المُحوَّل منه</Label>
+                  <Input
+                    value={senderPhone}
+                    onChange={(e) => setSenderPhone(e.target.value)}
+                    placeholder="01xxxxxxxxx"
+                    dir="ltr"
+                    className="text-left"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>صورة إيصال التحويل</Label>
+                  <label className="block cursor-pointer">
+                    <div className="flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border/50 p-4 hover:border-primary/30 transition-colors">
+                      <Upload className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
+                        {screenshotFile ? screenshotFile.name : "اختر صورة"}
+                      </span>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => setScreenshotFile(e.target.files?.[0] || null)}
+                    />
+                  </label>
+                </div>
+              </>
+            )}
 
             <div className="flex gap-3">
               <Button onClick={handleSubmitPayment} disabled={submitting} className="flex-1 gap-2">
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                إرسال طلب الاشتراك
+                {isFullyCoveredByCredit ? "تفعيل الباقة بالرصيد" : "إرسال طلب الاشتراك"}
               </Button>
-              <Button variant="outline" onClick={() => { setShowPaymentForm(false); setSelectedPlan(null); }}>
+              <Button variant="outline" onClick={() => { setShowPaymentForm(false); setSelectedPlan(null); setCreditApplied(false); setCreditAmount(0); }}>
                 إلغاء
               </Button>
             </div>

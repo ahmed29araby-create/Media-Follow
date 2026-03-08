@@ -64,7 +64,7 @@ export default function SuperAdminDashboard() {
   const [showTogglePassword, setShowTogglePassword] = useState(false);
 
   const [form, setForm] = useState({
-    org_name: "", org_email: "", admin_password: "",
+    org_name: "", org_email: "", admin_password: "", referral_code: "",
   });
 
   const fetchOrgs = async () => {
@@ -81,13 +81,20 @@ export default function SuperAdminDashboard() {
       return;
     }
     setCreating(true);
-    const { data, error } = await supabase.functions.invoke("create-organization", { body: form });
+    const { data, error } = await supabase.functions.invoke("create-organization", {
+      body: {
+        org_name: form.org_name,
+        org_email: form.org_email,
+        admin_password: form.admin_password,
+        referral_code: form.referral_code.trim() || undefined,
+      },
+    });
     if (error || data?.error) {
       toast.error(data?.error || error?.message || "فشل إنشاء الشركة");
     } else {
       toast.success("تم إنشاء الشركة بنجاح!");
       setDialogOpen(false);
-      setForm({ org_name: "", org_email: "", admin_password: "" });
+      setForm({ org_name: "", org_email: "", admin_password: "", referral_code: "" });
       fetchOrgs();
     }
     setCreating(false);
@@ -208,6 +215,11 @@ export default function SuperAdminDashboard() {
                 <p className="text-xs text-muted-foreground bg-secondary/50 p-3 rounded-lg">
                   بعد الإنشاء، أرسل البريد الإلكتروني وكلمة المرور لمسؤول الشركة لتسجيل الدخول.
                 </p>
+                <div className="space-y-2">
+                  <Label>كود الإحالة (اختياري)</Label>
+                  <Input value={form.referral_code} onChange={e => setForm(f => ({ ...f, referral_code: e.target.value }))} placeholder="كود الإحالة إن وُجد" dir="ltr" className="text-left" />
+                  <p className="text-xs text-muted-foreground">إذا تم إنشاء الشركة عبر رابط إحالة، أدخل الكود هنا</p>
+                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>

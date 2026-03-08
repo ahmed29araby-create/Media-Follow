@@ -13,6 +13,7 @@ import {
   Phone, Image as ImageIcon, Building2, Lock,
 } from "lucide-react";
 import PlanManagement from "@/components/subscription/PlanManagement";
+import ReferralSettings from "@/components/referral/ReferralSettings";
 
 interface PaymentRequest {
   id: string;
@@ -148,6 +149,85 @@ export default function AdminSubscriptionsPage() {
 
     await supabase.from("organizations").update({ is_active: true }).eq("id", payment.organization_id);
 
+    // === REFERRAL CREDIT LOGIC ===
+    try {
+      // Check if this org was referred by someone
+      const { data: referral } = await supabase
+        .from("referrals")
+        .select("id, referrer_org_id")
+        .eq("referred_org_id", payment.organization_id)
+        .maybeSingle();
+
+      if (referral) {
+        // Check if credit was already given for this referral
+        const { data: existingCredit } = await supabase
+          .from("referral_credits")
+          .select("id")
+          .eq("referral_id", referral.id)
+          .maybeSingle();
+
+        if (!existingCredit) {
+          // Get referral percentage
+          const { data: pctSetting } = await supabase
+            .from("admin_settings")
+            .select("setting_value")
+            .eq("setting_key", "referral_percentage")
+            .is("organization_id", null)
+            .maybeSingle();
+          const percentage = Number(pctSetting?.setting_value ?? 50);
+
+          // Get credit expiry months
+          const { data: expSetting } = await supabase
+            .from("admin_settings")
+            .select("setting_value")
+            .eq("setting_key", "credit_expiry_months")
+            .is("organization_id", null)
+            .maybeSingle();
+          const expiryMonths = Number(expSetting?.setting_value ?? 6);
+
+          const creditAmount = Math.round(payment.amount * percentage / 100);
+          const expiresAt = new Date();
+          expiresAt.setMonth(expiresAt.getMonth() + expiryMonths);
+
+          // Get referrer org name for description
+          const { data: referredOrg } = await supabase
+            .from("organizations")
+            .select("name")
+            .eq("id", payment.organization_id)
+            .maybeSingle();
+
+          await supabase.from("referral_credits").insert({
+            organization_id: referral.referrer_org_id,
+            amount: creditAmount,
+            remaining: creditAmount,
+            referral_id: referral.id,
+            source_description: `إحالة ${referredOrg?.name || "شركة"} — اشتراك ${payment.amount} جنيه`,
+            expires_at: expiresAt.toISOString(),
+          });
+
+          // Notify referrer
+          const { data: referrerProfiles } = await supabase
+            .from("profiles")
+            .select("user_id")
+            .eq("organization_id", referral.referrer_org_id);
+
+          if (referrerProfiles) {
+            for (const p of referrerProfiles) {
+              await supabase.from("notifications").insert({
+                user_id: p.user_id,
+                organization_id: referral.referrer_org_id,
+                title: "🎉 حصلت على رصيد إحالة!",
+                message: `تم إضافة ${creditAmount} جنيه رصيد لحسابك من إحالة ${referredOrg?.name || "شركة"}. صالح لمدة ${expiryMonths} شهور.`,
+                type: "referral_credit",
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Referral credit error:", e);
+    }
+
     const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id")
@@ -232,6 +312,9 @@ export default function AdminSubscriptionsPage() {
 
       {/* Plan Management Section */}
       <PlanManagement />
+
+      {/* Referral Settings */}
+      <ReferralSettings />
 
       {/* Filter tabs */}
       <div className="flex gap-2 flex-wrap">
