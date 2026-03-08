@@ -230,6 +230,9 @@ export default function AdminSubscriptionsPage() {
         <p className="text-sm text-muted-foreground">مراجعة وإدارة طلبات الاشتراك</p>
       </div>
 
+      {/* Plan Management Section */}
+      <PlanManagement />
+
       {/* Filter tabs */}
       <div className="flex gap-2 flex-wrap">
         {([
