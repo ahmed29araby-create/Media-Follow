@@ -119,7 +119,7 @@ export default function PrivacyPage() {
         {/* Company name & email centered at top */}
         {isOrgUser && !orgLoading && (
           <div className="text-center space-y-1 pb-4 border-b border-border">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">{orgName}</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: '-0.02em' }}>{orgName}</h1>
             <p className="text-sm text-muted-foreground" dir="ltr">{orgEmail}</p>
           </div>
         )}
