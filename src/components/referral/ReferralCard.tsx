@@ -14,7 +14,7 @@ interface ReferralInfo {
 }
 
 export default function ReferralCard() {
-  const { organizationId, organizationName } = useAuth();
+  const { organizationId } = useAuth();
   const [info, setInfo] = useState<ReferralInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,11 +46,10 @@ export default function ReferralCard() {
     setLoading(false);
   };
 
-  const copyLink = () => {
+  const copyCode = () => {
     if (!info?.code) return;
-    const link = `${window.location.origin}/auth?ref=${info.code}`;
-    navigator.clipboard.writeText(link);
-    toast.success("تم نسخ رابط الدعوة!");
+    navigator.clipboard.writeText(info.code);
+    toast.success("تم نسخ كود الخصم!");
   };
 
   if (loading) {
@@ -63,8 +62,6 @@ export default function ReferralCard() {
 
   if (!info?.code) return null;
 
-  const referralLink = `${window.location.origin}/auth?ref=${info.code}`;
-
   return (
     <div className="glass-panel p-6 space-y-4">
       <div className="flex items-center gap-3 mb-2">
@@ -73,7 +70,7 @@ export default function ReferralCard() {
         </div>
         <div>
           <h2 className="text-sm font-semibold text-foreground">شارك الموقع واحصل على خصم!</h2>
-          <p className="text-xs text-muted-foreground">احصل على رصيد مجاني عند دعوة شركات جديدة</p>
+          <p className="text-xs text-muted-foreground">شارك كود الخصم مع الآخرين واحصلوا على خصم معاً</p>
         </div>
       </div>
 
@@ -81,21 +78,21 @@ export default function ReferralCard() {
       <div className="bg-secondary/50 rounded-lg p-4 space-y-2">
         <p className="text-xs font-semibold text-foreground">كيف يعمل نظام الإحالة؟</p>
         <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
-          <li>شارك رابط الدعوة الخاص بك مع الآخرين</li>
-          <li>عندما يسجل شخص جديد عبر رابطك ويشترك في باقة</li>
-          <li>تحصل على رصيد بنسبة من قيمة اشتراكه</li>
+          <li>شارك كود الخصم الخاص بك مع الآخرين</li>
+          <li>عندما يستخدم شخص الكود عند الاشتراك، يحصل على خصم فوري</li>
+          <li>وأنت تحصل على رصيد بنسبة من قيمة اشتراكه</li>
           <li>استخدم رصيدك للحصول على خصم على باقتك القادمة</li>
         </ol>
       </div>
 
-      {/* Referral link */}
+      {/* Discount code */}
       <div className="space-y-2">
-        <label className="text-xs font-medium text-muted-foreground">رابط الدعوة الخاص بك</label>
+        <label className="text-xs font-medium text-muted-foreground">كود الخصم الخاص بك</label>
         <div className="flex items-center gap-2">
-          <div className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-xs font-mono text-foreground truncate" dir="ltr">
-            {referralLink}
+          <div className="flex-1 bg-background border border-border rounded-lg px-4 py-3 text-center text-lg font-mono font-bold text-foreground tracking-widest" dir="ltr">
+            {info.code}
           </div>
-          <Button size="sm" variant="outline" onClick={copyLink} className="gap-1.5 shrink-0">
+          <Button size="sm" variant="outline" onClick={copyCode} className="gap-1.5 shrink-0">
             <Copy className="h-3.5 w-3.5" />
             نسخ
           </Button>
@@ -107,7 +104,7 @@ export default function ReferralCard() {
         <div className="bg-background border border-border/50 rounded-lg p-3 text-center space-y-1">
           <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
             <Users className="h-3.5 w-3.5" />
-            <span className="text-xs">إحالات ناجحة</span>
+            <span className="text-xs">استخدامات ناجحة</span>
           </div>
           <p className="text-2xl font-bold text-foreground">{info.referralCount}</p>
         </div>

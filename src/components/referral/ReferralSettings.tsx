@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import { Loader2, Percent, Clock, Gift } from "lucide-react";
 
 export default function ReferralSettings() {
-  const [percentage, setPercentage] = useState("50");
+  const [ownerPercentage, setOwnerPercentage] = useState("50");
+  const [userPercentage, setUserPercentage] = useState("25");
   const [expiryMonths, setExpiryMonths] = useState("6");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -16,12 +17,13 @@ export default function ReferralSettings() {
     supabase
       .from("admin_settings")
       .select("setting_key, setting_value")
-      .in("setting_key", ["referral_percentage", "credit_expiry_months"])
+      .in("setting_key", ["referral_percentage", "user_discount_percentage", "credit_expiry_months"])
       .is("organization_id", null)
       .then(({ data }) => {
         if (data) {
           for (const row of data) {
-            if (row.setting_key === "referral_percentage") setPercentage(row.setting_value);
+            if (row.setting_key === "referral_percentage") setOwnerPercentage(row.setting_value);
+            if (row.setting_key === "user_discount_percentage") setUserPercentage(row.setting_value);
             if (row.setting_key === "credit_expiry_months") setExpiryMonths(row.setting_value);
           }
         }
@@ -30,15 +32,21 @@ export default function ReferralSettings() {
   }, []);
 
   const handleSave = async () => {
-    const pct = Number(percentage);
+    const ownerPct = Number(ownerPercentage);
+    const userPct = Number(userPercentage);
     const months = Number(expiryMonths);
-    if (isNaN(pct) || pct < 1 || pct > 100) { toast.error("النسبة يجب أن تكون بين 1 و 100"); return; }
+    if (isNaN(ownerPct) || ownerPct < 1 || ownerPct > 100) { toast.error("نسبة صاحب الكود يجب أن تكون بين 1 و 100"); return; }
+    if (isNaN(userPct) || userPct < 1 || userPct > 100) { toast.error("نسبة المستخدم يجب أن تكون بين 1 و 100"); return; }
     if (isNaN(months) || months < 1) { toast.error("مدة الصلاحية يجب أن تكون شهر واحد على الأقل"); return; }
 
     setSaving(true);
     const results = await Promise.all([
       supabase.from("admin_settings").upsert(
-        { setting_key: "referral_percentage", setting_value: String(pct), organization_id: null },
+        { setting_key: "referral_percentage", setting_value: String(ownerPct), organization_id: null },
+        { onConflict: "setting_key" }
+      ),
+      supabase.from("admin_settings").upsert(
+        { setting_key: "user_discount_percentage", setting_value: String(userPct), organization_id: null },
         { onConflict: "setting_key" }
       ),
       supabase.from("admin_settings").upsert(
@@ -62,31 +70,47 @@ export default function ReferralSettings() {
         </div>
         <div>
           <h2 className="text-sm font-semibold text-foreground">إعدادات نظام الإحالة</h2>
-          <p className="text-xs text-muted-foreground">التحكم في نسبة الخصم ومدة صلاحية الرصيد</p>
+          <p className="text-xs text-muted-foreground">التحكم في نسب الخصم ومدة صلاحية الرصيد</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
             <Percent className="h-3.5 w-3.5 text-muted-foreground" />
-            نسبة الخصم للمُحيل (%)
+            خصم صاحب الكود (%)
           </Label>
           <Input
             type="number"
             min={1}
             max={100}
-            value={percentage}
-            onChange={e => setPercentage(e.target.value)}
+            value={ownerPercentage}
+            onChange={e => setOwnerPercentage(e.target.value)}
             dir="ltr"
             className="text-left"
           />
-          <p className="text-xs text-muted-foreground">النسبة من قيمة اشتراك الشخص المُحال</p>
+          <p className="text-xs text-muted-foreground">رصيد يُضاف لصاحب الكود كنسبة من الاشتراك</p>
+        </div>
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            <Percent className="h-3.5 w-3.5 text-muted-foreground" />
+            خصم مستخدم الكود (%)
+          </Label>
+          <Input
+            type="number"
+            min={1}
+            max={100}
+            value={userPercentage}
+            onChange={e => setUserPercentage(e.target.value)}
+            dir="ltr"
+            className="text-left"
+          />
+          <p className="text-xs text-muted-foreground">خصم فوري للشخص اللي بيستخدم الكود</p>
         </div>
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
             <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-            مدة صلاحية الرصيد (شهور)
+            صلاحية الرصيد (شهور)
           </Label>
           <Input
             type="number"
