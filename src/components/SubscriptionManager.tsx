@@ -170,6 +170,12 @@ export default function SubscriptionManager({ organizationId, organizationName }
 
   const handleCancelSubscription = async () => {
     if (!subscription) return;
+    if (!cancelPassword) { toast.error("يرجى إدخال كلمة المرور"); return; }
+    setCancelling(true);
+
+    const valid = await verifyPassword(cancelPassword);
+    if (!valid) { toast.error("كلمة المرور غير صحيحة"); setCancelling(false); return; }
+
     const { error } = await supabase
       .from("subscriptions")
       .update({ ends_at: new Date().toISOString(), notes: `${subscription.notes || ""}\n⛔ تم إلغاء الاشتراك يدوياً` })
@@ -181,8 +187,11 @@ export default function SubscriptionManager({ organizationId, organizationName }
       toast.error(error.message);
     } else {
       toast.success("تم إلغاء الاشتراك بنجاح");
+      setCancelOpen(false);
+      setCancelPassword("");
       fetchData();
     }
+    setCancelling(false);
   };
 
   const handleApprovePayment = async (payment: PaymentRequest) => {
