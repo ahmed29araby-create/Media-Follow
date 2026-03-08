@@ -211,6 +211,9 @@ export default function SettingsPage() {
         </div>
         <Button onClick={() => saveSetting("drive_folder_path", driveFolderPath)} disabled={saving}>{saving && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}حفظ الإعدادات</Button>
       </div>
+
+      {/* Referral Card - for org admins */}
+      {!isSuperAdmin && <ReferralCard />}
     </div>
   );
 }

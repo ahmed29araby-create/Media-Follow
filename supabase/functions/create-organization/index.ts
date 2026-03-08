@@ -5,6 +5,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function generateCode(orgName: string): string {
+  const slug = orgName.toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 8);
+  const rand = Math.random().toString(36).substring(2, 8);
+  return `${slug}-${rand}`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -28,7 +34,7 @@ Deno.serve(async (req) => {
       .single();
     if (!roleCheck) throw new Error("Unauthorized: super_admin only");
 
-    const { org_name, org_email, admin_password } = await req.json();
+    const { org_name, org_email, admin_password, referral_code } = await req.json();
 
     if (!org_name || !org_email || !admin_password) {
       throw new Error("Missing required fields");
@@ -63,6 +69,29 @@ Deno.serve(async (req) => {
       .from("user_roles")
       .insert({ user_id: newUser.user.id, role: "admin" });
     if (roleError) throw roleError;
+
+    // Generate referral code for the new org
+    const code = generateCode(org_name);
+    await adminClient.from("referral_codes").insert({
+      organization_id: org.id,
+      code,
+    });
+
+    // If this org was referred, create the referral link
+    if (referral_code) {
+      const { data: referrerCode } = await adminClient
+        .from("referral_codes")
+        .select("organization_id")
+        .eq("code", referral_code)
+        .maybeSingle();
+      
+      if (referrerCode) {
+        await adminClient.from("referrals").insert({
+          referrer_org_id: referrerCode.organization_id,
+          referred_org_id: org.id,
+        });
+      }
+    }
 
     return new Response(JSON.stringify({ success: true, organization: org }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
