@@ -119,7 +119,7 @@ export default function PrivacyPage() {
         {/* Company name & email centered at top */}
         {isOrgUser && !orgLoading && (
           <div className="text-center space-y-1 pb-4 border-b border-border">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">{orgName}</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: '-0.02em' }}>{orgName}</h1>
             <p className="text-sm text-muted-foreground" dir="ltr">{orgEmail}</p>
           </div>
         )}
@@ -167,7 +167,8 @@ export default function PrivacyPage() {
             </h3>
             <PasswordInput value={currentPassword} onChange={setCurrentPassword} placeholder="كلمة المرور الحالية" show={showCurrent} onMouseDown={() => setShowCurrent(true)} onMouseUp={() => setShowCurrent(false)} onMouseLeave={() => setShowCurrent(false)} onTouchStart={() => setShowCurrent(true)} onTouchEnd={() => setShowCurrent(false)} />
             <PasswordInput value={newPassword} onChange={setNewPassword} placeholder="كلمة المرور الجديدة" show={showNew} onMouseDown={() => setShowNew(true)} onMouseUp={() => setShowNew(false)} onMouseLeave={() => setShowNew(false)} onTouchStart={() => setShowNew(true)} onTouchEnd={() => setShowNew(false)} />
-            <PasswordInput value={confirmNewPassword} onChange={setConfirmNewPassword} placeholder="كلمة المرور يجب أن تكون 12 حرف على الأقل" show={showConfirm} onMouseDown={() => setShowConfirm(true)} onMouseUp={() => setShowConfirm(false)} onMouseLeave={() => setShowConfirm(false)} onTouchStart={() => setShowConfirm(true)} onTouchEnd={() => setShowConfirm(false)} />
+            <PasswordInput value={confirmNewPassword} onChange={setConfirmNewPassword} placeholder="تأكيد كلمة المرور" show={showConfirm} onMouseDown={() => setShowConfirm(true)} onMouseUp={() => setShowConfirm(false)} onMouseLeave={() => setShowConfirm(false)} onTouchStart={() => setShowConfirm(true)} onTouchEnd={() => setShowConfirm(false)} />
+            <p className="text-xs text-destructive text-right">يجب ألا تقل كلمة المرور عن 12 حرفًا لضمان أمان حسابك</p>
             <div className="flex justify-start">
               <Button size="sm" onClick={handlePasswordChange} disabled={passwordLoading}>
                 {passwordLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
