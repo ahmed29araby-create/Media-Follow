@@ -44,6 +44,7 @@ export default function SubscriptionPage() {
   const [senderPhone, setSenderPhone] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [vodafoneNumber, setVodafoneNumber] = useState("01012345678");
 
   const fetchData = async () => {
     if (!organizationId) return;
