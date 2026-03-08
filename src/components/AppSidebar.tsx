@@ -62,9 +62,7 @@ export default function AppSidebar({ open, onToggle }: AppSidebarProps) {
     ? "مالك المنصة"
     : isAdmin
       ? "مسؤول الشركة"
-      : organizationName
-        ? `عضو فريق في شركة ${organizationName}`
-        : "عضو فريق";
+      : "عضو فريق";
 
   useEffect(() => {
     if (!user) return;
