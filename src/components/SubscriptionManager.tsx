@@ -196,6 +196,22 @@ export default function SubscriptionManager({ organizationId, organizationName }
     if (error) {
       toast.error(error.message);
     } else {
+      // Send cancellation notification to org members
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("organization_id", organizationId);
+      if (profiles) {
+        for (const p of profiles) {
+          await supabase.from("notifications").insert({
+            user_id: p.user_id,
+            organization_id: organizationId,
+            title: "⛔ تم إلغاء الاشتراك",
+            message: `تم إلغاء اشتراك ${organizationName} يدوياً من قبل إدارة الموقع. يرجى التواصل لتجديد الاشتراك.`,
+            type: "sub_cancelled",
+          });
+        }
+      }
       toast.success("تم إلغاء الاشتراك بنجاح");
       setCancelOpen(false);
       setCancelPassword("");
