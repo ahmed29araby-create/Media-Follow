@@ -77,19 +77,20 @@ export default function PrivacyPage() {
   };
 
   return (
-    <div className="p-6 max-w-2xl space-y-6" dir="rtl">
+    <div className="p-6 max-w-2xl space-y-8" dir="rtl">
       {/* Company name & email centered at top */}
       {isOrgUser && !orgLoading && (
-        <div className="text-center space-y-1">
+        <div className="text-center space-y-1 pb-2 border-b border-border">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{orgName}</h1>
           <p className="text-sm text-muted-foreground" dir="ltr">{orgEmail}</p>
         </div>
       )}
 
-      <div className="glass-panel p-6 space-y-5">
+      {/* Sections - flat style, no card shadow */}
+      <div className="space-y-6">
         {/* Org Name Change */}
         {isOrgUser && (
-          <div className="space-y-3 p-4 rounded-lg border border-border">
+          <section className="space-y-3">
             <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
               <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
               تغيير اسم الشركة
@@ -99,11 +100,12 @@ export default function PrivacyPage() {
               {savingOrg && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
               حفظ التغييرات
             </Button>
-          </div>
+            <div className="border-b border-border pt-2" />
+          </section>
         )}
 
         {/* Email Change */}
-        <div className="space-y-3 p-4 rounded-lg border border-border">
+        <section className="space-y-3">
           <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
             <Mail className="h-3.5 w-3.5 text-muted-foreground" />
             تغيير البريد الإلكتروني
@@ -117,10 +119,11 @@ export default function PrivacyPage() {
             {emailChangeLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
             تغيير البريد
           </Button>
-        </div>
+          <div className="border-b border-border pt-2" />
+        </section>
 
         {/* Password Change */}
-        <div className="space-y-3 p-4 rounded-lg border border-border">
+        <section className="space-y-3">
           <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
             <Eye className="h-3.5 w-3.5 text-muted-foreground" />
             تغيير كلمة المرور
@@ -146,11 +149,8 @@ export default function PrivacyPage() {
             {passwordLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
             تحديث كلمة المرور
           </Button>
-        </div>
+        </section>
       </div>
-
-      {/* Privacy title small at bottom */}
-      <p className="text-xs text-muted-foreground text-center">الخصوصية</p>
     </div>
   );
 }
