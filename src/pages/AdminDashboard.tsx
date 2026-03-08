@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Clock, CheckCircle, Film } from "lucide-react";
+import { Users, Clock, CheckCircle, Film, Building2 } from "lucide-react";
 
 export default function AdminDashboard() {
   const { organizationId, organizationName } = useAuth();
