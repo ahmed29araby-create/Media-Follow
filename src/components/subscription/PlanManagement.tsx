@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   ChevronDown, ChevronUp, Pencil, Save, X, Users, CheckCircle,
-  TrendingUp, TrendingDown, Percent, DollarSign, Settings2,
+  TrendingUp, TrendingDown, Percent, DollarSign, Settings2, Eye, EyeOff,
 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
