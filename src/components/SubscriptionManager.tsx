@@ -159,9 +159,7 @@ export default function SubscriptionManager({ organizationId, organizationName }
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success(subscription && new Date(subscription.ends_at) > new Date()
-        ? `تم تجديد الاشتراك بـ ${months} شهر إضافي`
-        : `تم تفعيل الاشتراك المجاني لمدة ${months} شهر`);
+      toast.success(`تم تحديث الاشتراك المجاني لمدة ${months} شهر`);
       setGrantOpen(false);
       setGrantPassword("");
       fetchData();
