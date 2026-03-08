@@ -319,6 +319,13 @@ export default function SuperAdminDashboard() {
                     {formatDate(detailsOrg.created_at)}
                   </span>
                 </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">عدد أعضاء الفريق</span>
+                  <span className="text-sm font-semibold text-primary flex items-center gap-1.5">
+                    <Users className="h-4 w-4" />
+                    {memberCount !== null ? memberCount : "..."}
+                  </span>
+                </div>
               </div>
 
               {/* Subscription management */}
