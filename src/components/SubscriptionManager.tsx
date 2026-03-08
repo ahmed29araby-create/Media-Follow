@@ -390,11 +390,14 @@ export default function SubscriptionManager({ organizationId, organizationName }
           <Gift className="h-4 w-4" />
           {isActive ? "تجديد الاشتراك (مجاني)" : "دفع اشتراك الشركة (مجاني)"}
         </Button>
-        {isActive && (
+        {isActive && subscription?.payment_method === "free_grant" && (
           <Button variant="destructive" className="w-full gap-2" onClick={() => setCancelOpen(true)}>
             <XCircle className="h-4 w-4" />
-            إلغاء الاشتراك
+            إلغاء الاشتراك المجاني
           </Button>
+        )}
+        {isActive && subscription?.payment_method !== "free_grant" && (
+          <p className="text-xs text-muted-foreground text-center">لا يمكن إلغاء الاشتراك المدفوع — سينتهي تلقائياً في موعده</p>
         )}
       </div>
 
