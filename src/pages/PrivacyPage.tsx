@@ -111,7 +111,7 @@ export default function PrivacyPage() {
     if (newPassword !== confirmNewPassword) { toast.error("كلمتا المرور غير متطابقتين", { id: "pw-mismatch" }); return; }
     setPasswordLoading(true);
     const { error: signInError } = await supabase.auth.signInWithPassword({ email: user?.email || "", password: currentPassword });
-    if (signInError) { toast.error("كلمة المرور الحالية غير صحيحة"); setPasswordLoading(false); return; }
+    if (signInError) { toast.error("كلمة المرور الحالية غير صحيحة", { id: "pw-current-wrong" }); setPasswordLoading(false); return; }
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) toast.error(error.message);
     else { toast.success("تم تحديث كلمة المرور بنجاح"); setCurrentPassword(""); setNewPassword(""); setConfirmNewPassword(""); }
