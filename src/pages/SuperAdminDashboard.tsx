@@ -311,6 +311,18 @@ export default function SuperAdminDashboard() {
                 <Trash2 className="h-4 w-4" />
                 حذف الشركة نهائياً
               </Button>
+
+              <Button
+                variant="outline"
+                className={`w-full gap-2 ${detailsOrg.is_active ? "border-destructive/50 text-destructive hover:bg-destructive/10" : "border-primary/50 text-primary hover:bg-primary/10"}`}
+                onClick={() => setToggleOrg(detailsOrg)}
+              >
+                {detailsOrg.is_active ? (
+                  <><Ban className="h-4 w-4" /> تعطيل الشركة</>
+                ) : (
+                  <><Power className="h-4 w-4" /> تفعيل الشركة</>
+                )}
+              </Button>
             </div>
           )}
         </DialogContent>
