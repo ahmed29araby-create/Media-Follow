@@ -177,10 +177,10 @@ export default function SubscriptionManager({ organizationId, organizationName }
     const valid = await verifyPassword(cancelPassword);
     if (!valid) { toast.error("كلمة المرور غير صحيحة"); setCancelling(false); return; }
 
-    const { error } = await supabase
-      .from("subscriptions")
-      .update({ ends_at: new Date().toISOString(), notes: `${subscription.notes || ""}\n⛔ تم إلغاء الاشتراك يدوياً` })
-      .eq("id", subscription.id);
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({ ends_at: new Date().toISOString(), notes: `⛔ تم إلغاء الاشتراك يدوياً` })
+        .eq("id", subscription.id);
 
     await supabase.from("organizations").update({ is_active: false }).eq("id", organizationId);
 
