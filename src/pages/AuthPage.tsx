@@ -77,11 +77,13 @@ export default function AuthPage() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail);
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("تم إرسال رمز التحقق إلى بريدك الإلكتروني");
+      toast.success("تم إرسال رسالة استعادة كلمة المرور إلى بريدك الإلكتروني. يمكنك الضغط على الرابط في الرسالة أو إدخال رمز التحقق هنا.");
       setStep("forgot-otp");
     }
     setLoading(false);
