@@ -38,7 +38,7 @@ function PasswordInput({ value, onChange, placeholder, show, onMouseDown, onMous
 }
 
 export default function PrivacyPage() {
-  const { user, isAdmin, isSuperAdmin, organizationId, refreshOrgData } = useAuth();
+  const { user, isAdmin, isSuperAdmin, organizationId, refreshOrgData, displayName, refreshDisplayName } = useAuth();
 
   const [orgName, setOrgName] = useState("");
   const [orgEmail, setOrgEmail] = useState("");
@@ -47,6 +47,9 @@ export default function PrivacyPage() {
   const [editOrgName, setEditOrgName] = useState("");
   const [editOrgEmail, setEditOrgEmail] = useState("");
   const [savingOrg, setSavingOrg] = useState(false);
+
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [savingDisplayName, setSavingDisplayName] = useState(false);
 
   const [emailChangeLoading, setEmailChangeLoading] = useState(false);
 
