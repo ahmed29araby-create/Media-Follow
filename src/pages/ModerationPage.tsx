@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Check, X, Film, Clock, FileEdit, Trash2 } from "lucide-react";
+import { Check, X, Film, Clock, FileEdit, Trash2, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -28,12 +28,35 @@ export default function ModerationPage() {
 
   useEffect(() => { fetchData(); }, []);
 
+  const [syncingFiles, setSyncingFiles] = useState<Set<string>>(new Set());
+
   const handleFileAction = async (fileId: string, action: "approved" | "rejected") => {
-    const { error } = await supabase.from("files").update({ status: action }).eq("id", fileId);
-    if (error) toast.error(error.message);
-    else {
-      toast.success(`File ${action}`);
-      fetchData();
+    if (action === "approved") {
+      setSyncingFiles((prev) => new Set(prev).add(fileId));
+      try {
+        const { data, error } = await supabase.functions.invoke("sync-to-drive", {
+          body: { file_id: fileId },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        toast.success("File approved & synced to Google Drive");
+      } catch (err: any) {
+        toast.error(`Sync failed: ${err.message}`);
+      } finally {
+        setSyncingFiles((prev) => {
+          const next = new Set(prev);
+          next.delete(fileId);
+          return next;
+        });
+        fetchData();
+      }
+    } else {
+      const { error } = await supabase.from("files").update({ status: action }).eq("id", fileId);
+      if (error) toast.error(error.message);
+      else {
+        toast.success(`File rejected`);
+        fetchData();
+      }
     }
   };
 
@@ -88,8 +111,8 @@ export default function ModerationPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="ghost" className="text-success hover:bg-success/10" onClick={() => handleFileAction(file.id, "approved")}>
-                    <Check className="h-4 w-4" />
+                  <Button size="sm" variant="ghost" className="text-success hover:bg-success/10" onClick={() => handleFileAction(file.id, "approved")} disabled={syncingFiles.has(file.id)}>
+                    {syncingFiles.has(file.id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                   </Button>
                   <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10" onClick={() => handleFileAction(file.id, "rejected")}>
                     <X className="h-4 w-4" />
