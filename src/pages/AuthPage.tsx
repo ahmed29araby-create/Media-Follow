@@ -237,6 +237,8 @@ export default function AuthPage() {
   const resetToLogin = () => {
     setStep("login");
     setOtpCode("");
+    setOtpExpiresAt(null);
+    setOtpRemaining(0);
     setNewPassword("");
     setConfirmPassword("");
   };
