@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
 
     if (!tokenData.refresh_token) {
       console.error("Token response:", JSON.stringify(tokenData));
-      return redirectToApp("error", "Failed to get refresh token");
+      return closePage("error", "Failed to get refresh token");
     }
 
     // Get user info
