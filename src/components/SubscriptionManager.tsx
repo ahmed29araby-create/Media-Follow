@@ -386,8 +386,8 @@ export default function SubscriptionManager({ organizationId, organizationName }
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setGrantOpen(false)}>إلغاء</Button>
-            <Button onClick={handleGrantFree} disabled={granting}>
+            <Button variant="outline" onClick={() => { setGrantOpen(false); setGrantPassword(""); }}>إلغاء</Button>
+            <Button onClick={handleGrantFree} disabled={granting || !grantPassword}>
               {granting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
               تفعيل الاشتراك
             </Button>
