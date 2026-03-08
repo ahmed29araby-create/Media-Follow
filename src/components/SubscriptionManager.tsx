@@ -97,29 +97,70 @@ export default function SubscriptionManager({ organizationId, organizationName }
     if (!user) return;
     setGranting(true);
     const months = parseInt(grantMonths);
-    const startsAt = new Date();
-    const endsAt = new Date();
-    endsAt.setMonth(endsAt.getMonth() + months);
 
-    const { error } = await supabase.from("subscriptions").insert({
-      organization_id: organizationId,
-      starts_at: startsAt.toISOString(),
-      ends_at: endsAt.toISOString(),
-      months,
-      amount: 0,
-      granted_by: user.id,
-      payment_method: "free_grant",
-      notes: `تم الدفع من صاحب الموقع لمدة ${months} شهر`,
-    });
+    let error: any = null;
+
+    if (subscription && new Date(subscription.ends_at) > new Date()) {
+      // Active subscription exists — extend it
+      const newEnd = new Date(subscription.ends_at);
+      newEnd.setMonth(newEnd.getMonth() + months);
+      const { error: updateErr } = await supabase
+        .from("subscriptions")
+        .update({
+          ends_at: newEnd.toISOString(),
+          months: subscription.months + months,
+          notes: `${subscription.notes || ""}\n+ تمديد ${months} شهر مجاني من صاحب الموقع`,
+        })
+        .eq("id", subscription.id);
+      error = updateErr;
+    } else {
+      // No active subscription — create new
+      const startsAt = new Date();
+      const endsAt = new Date();
+      endsAt.setMonth(endsAt.getMonth() + months);
+      const { error: insertErr } = await supabase.from("subscriptions").insert({
+        organization_id: organizationId,
+        starts_at: startsAt.toISOString(),
+        ends_at: endsAt.toISOString(),
+        months,
+        amount: 0,
+        granted_by: user.id,
+        payment_method: "free_grant",
+        notes: `تم الدفع من صاحب الموقع لمدة ${months} شهر`,
+      });
+      error = insertErr;
+    }
+
+    // Re-activate org
+    await supabase.from("organizations").update({ is_active: true }).eq("id", organizationId);
 
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success(`تم تفعيل الاشتراك المجاني لمدة ${months} شهر`);
+      toast.success(subscription && new Date(subscription.ends_at) > new Date()
+        ? `تم تمديد الاشتراك بـ ${months} شهر إضافي`
+        : `تم تفعيل الاشتراك المجاني لمدة ${months} شهر`);
       setGrantOpen(false);
       fetchData();
     }
     setGranting(false);
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!subscription) return;
+    const { error } = await supabase
+      .from("subscriptions")
+      .update({ ends_at: new Date().toISOString(), notes: `${subscription.notes || ""}\n⛔ تم إلغاء الاشتراك يدوياً` })
+      .eq("id", subscription.id);
+
+    await supabase.from("organizations").update({ is_active: false }).eq("id", organizationId);
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("تم إلغاء الاشتراك بنجاح");
+      fetchData();
+    }
   };
 
   const handleApprovePayment = async (payment: PaymentRequest) => {
