@@ -149,6 +149,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const refreshOrgData = async () => {
+    if (!organizationId) return;
+    const { data: orgData } = await supabase
+      .from("organizations")
+      .select("name, is_active")
+      .eq("id", organizationId)
+      .single();
+    if (orgData) {
+      setOrganizationName(orgData.name);
+      setIsOrgActive(orgData.is_active);
+    }
+  };
+
   const isSuperAdmin = role === "super_admin";
   const isAdmin = role === "admin" || role === "super_admin";
   const isMember = role === "member";
