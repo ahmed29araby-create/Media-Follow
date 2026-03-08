@@ -13,6 +13,7 @@ type AuthStep = "login" | "signup" | "forgot-email" | "forgot-otp" | "forgot-new
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_SECONDS = 60;
+const OTP_EXPIRY_SECONDS = 300;
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
@@ -24,12 +25,15 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<AuthStep>("login");
   const [otpCode, setOtpCode] = useState("");
+  const [otpExpiresAt, setOtpExpiresAt] = useState<number | null>(null);
+  const [otpRemaining, setOtpRemaining] = useState(0);
 
   // Brute-force protection
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
   const [lockoutRemaining, setLockoutRemaining] = useState(0);
   const lockoutTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const otpTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const navigate = useNavigate();
   const { user } = useAuth();
