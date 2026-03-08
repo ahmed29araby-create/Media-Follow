@@ -20,6 +20,7 @@ import PrivacyPage from "@/pages/PrivacyPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import SubscriptionPage from "@/pages/SubscriptionPage";
 import AdminSubscriptionsPage from "@/pages/AdminSubscriptionsPage";
+import FinancialReportsPage from "@/pages/FinancialReportsPage";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,7 @@ function ProtectedRoutes() {
         {(isAdmin || isSuperAdmin) && <Route path="/settings" element={<SettingsPage />} />}
         {isSuperAdmin && <Route path="/admin-dashboard" element={<AdminDashboard />} />}
         {isSuperAdmin && <Route path="/admin-subscriptions" element={<AdminSubscriptionsPage />} />}
+        {isSuperAdmin && <Route path="/financial-reports" element={<FinancialReportsPage />} />}
         <Route path="/privacy" element={<PrivacyPage />} />
         {isAdmin && <Route path="/subscription" element={<SubscriptionPage />} />}
 

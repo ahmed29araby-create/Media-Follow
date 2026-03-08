@@ -13,6 +13,7 @@ import {
   Globe,
   PanelLeft,
   CreditCard,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState, useRef } from "react";
@@ -22,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 const superAdminLinks = [
   { to: "/dashboard", label: "لوحة تحكم الموقع", icon: Globe },
   { to: "/admin-subscriptions", label: "الاشتراكات", icon: CreditCard },
+  { to: "/financial-reports", label: "التقارير المالية", icon: BarChart3 },
   { to: "/settings", label: "الإعدادات", icon: Settings },
   { to: "/privacy", label: "الخصوصية", icon: ShieldCheck },
 ];
