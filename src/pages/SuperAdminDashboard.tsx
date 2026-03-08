@@ -64,7 +64,7 @@ export default function SuperAdminDashboard() {
   const [showTogglePassword, setShowTogglePassword] = useState(false);
 
   const [form, setForm] = useState({
-    org_name: "", org_email: "", admin_password: "",
+    org_name: "", org_email: "", admin_password: "", referral_code: "",
   });
 
   const fetchOrgs = async () => {
