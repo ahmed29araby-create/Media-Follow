@@ -8,24 +8,13 @@ import { toast } from "sonner";
 import { FolderOpen, Loader2, Link2, Unlink, Mail, CheckCircle2 } from "lucide-react";
 
 export default function SettingsPage() {
-  const { organizationId, user } = useAuth();
+  const { organizationId } = useAuth();
   const [driveFolderPath, setDriveFolderPath] = useState("");
   const [saving, setSaving] = useState(false);
   const [connectedEmail, setConnectedEmail] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  // Email change state
-  const [newEmail, setNewEmail] = useState("");
-  const [emailChangeLoading, setEmailChangeLoading] = useState(false);
-
-  // Password change state
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
-  const [showPasswords, setShowPasswords] = useState(false);
-  const [passwordLoading, setPasswordLoading] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
