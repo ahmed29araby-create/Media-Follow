@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { FolderOpen, Loader2, Link2, Unlink, Mail, CheckCircle2, Phone } from "lucide-react";
+import ReferralCard from "@/components/referral/ReferralCard";
 
 export default function SettingsPage() {
   const { organizationId, organizationName, isSuperAdmin } = useAuth();
