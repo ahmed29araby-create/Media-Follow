@@ -59,6 +59,7 @@ export default function FinancialReportsPage() {
 
   const [periodType, setPeriodType] = useState<PeriodType>("year");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [expandedCard, setExpandedCard] = useState<"subscribed" | "expired" | "revenue" | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
 
   useEffect(() => {
@@ -147,20 +148,28 @@ export default function FinancialReportsPage() {
   const totalRevenue = paidRevenue;
 
   // New subs in period (unique orgs that got a subscription)
-  const newSubsCount = Object.keys(uniqueOrgSubsInPeriod).length;
+  const subscribedOrgsInPeriod = useMemo(() => {
+    return Object.values(uniqueOrgSubsInPeriod).map(s => ({
+      sub: s,
+      org: orgs[s.organization_id],
+    }));
+  }, [uniqueOrgSubsInPeriod, orgs]);
+  const newSubsCount = subscribedOrgsInPeriod.length;
 
   // Expired subs in period — subs whose ends_at falls in this period
-  const expiredInPeriod = useMemo(() => {
+  const expiredOrgsInPeriod = useMemo(() => {
     const seen = new Set<string>();
-    return subscriptions.filter(s => {
+    const results: { sub: Subscription; org: OrgInfo | undefined }[] = [];
+    for (const s of subscriptions) {
       const endDate = new Date(s.ends_at);
       if (endDate >= dateRange.start && endDate <= dateRange.end && endDate <= now && !seen.has(s.organization_id)) {
         seen.add(s.organization_id);
-        return true;
+        results.push({ sub: s, org: orgs[s.organization_id] });
       }
-      return false;
-    }).length;
-  }, [subscriptions, dateRange, now]);
+    }
+    return results;
+  }, [subscriptions, dateRange, now, orgs]);
+  const expiredInPeriod = expiredOrgsInPeriod.length;
 
   // Chart data based on period type
   const chartData = useMemo(() => {
@@ -363,7 +372,10 @@ export default function FinancialReportsPage() {
 
       {/* Period Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border-border/50">
+        <Card
+          className={cn("border-border/50 cursor-pointer transition-all hover:border-primary/50", expandedCard === "subscribed" && "border-primary ring-1 ring-primary/20")}
+          onClick={() => setExpandedCard(expandedCard === "subscribed" ? null : "subscribed")}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -376,7 +388,10 @@ export default function FinancialReportsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-border/50">
+        <Card
+          className={cn("border-border/50 cursor-pointer transition-all hover:border-destructive/50", expandedCard === "expired" && "border-destructive ring-1 ring-destructive/20")}
+          onClick={() => setExpandedCard(expandedCard === "expired" ? null : "expired")}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
@@ -389,7 +404,10 @@ export default function FinancialReportsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-border/50">
+        <Card
+          className={cn("border-border/50 cursor-pointer transition-all hover:border-accent-foreground/30", expandedCard === "revenue" && "border-accent-foreground/50 ring-1 ring-accent-foreground/10")}
+          onClick={() => setExpandedCard(expandedCard === "revenue" ? null : "revenue")}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent">
@@ -403,6 +421,121 @@ export default function FinancialReportsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Expanded Detail Panel */}
+      {expandedCard === "subscribed" && (
+        <Card className="border-primary/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-primary" />
+              الشركات اللي اشتركت في هذه الفترة ({newSubsCount})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {subscribedOrgsInPeriod.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">لا توجد شركات اشتركت في هذه الفترة</p>
+            ) : (
+              <div className="space-y-2">
+                {subscribedOrgsInPeriod.map(({ sub, org }) => (
+                  <div key={sub.id} className="flex items-center justify-between p-3 rounded-lg border border-border/30">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${sub.payment_method === "free_grant" ? "bg-accent" : "bg-primary/10"}`}>
+                        {sub.payment_method === "free_grant" ? <Gift className="h-4 w-4 text-muted-foreground" /> : <Building2 className="h-4 w-4 text-primary" />}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{org?.name || "شركة"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {sub.months} شهر — {sub.payment_method === "free_grant" ? "مجاني" : "فودافون كاش"} — {formatDateStr(sub.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-foreground">{Number(sub.amount) > 0 ? formatCurrency(Number(sub.amount)) : "مجاني"}</span>
+                      {new Date(sub.ends_at) > now ? (
+                        <Badge className="bg-primary/15 text-primary border-primary/30 text-[10px]">نشط</Badge>
+                      ) : (
+                        <Badge className="bg-destructive/15 text-destructive border-destructive/30 text-[10px]">منتهي</Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {expandedCard === "expired" && (
+        <Card className="border-destructive/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <XCircle className="h-4 w-4 text-destructive" />
+              الشركات اللي انتهى اشتراكها في هذه الفترة ({expiredInPeriod})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {expiredOrgsInPeriod.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">لا توجد شركات انتهى اشتراكها في هذه الفترة</p>
+            ) : (
+              <div className="space-y-2">
+                {expiredOrgsInPeriod.map(({ sub, org }) => (
+                  <div key={sub.id} className="flex items-center justify-between p-3 rounded-lg border border-border/30">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/10">
+                        <XCircle className="h-4 w-4 text-destructive" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{org?.name || "شركة"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          انتهى في {formatDateStr(sub.ends_at)} — {sub.months} شهر — {sub.payment_method === "free_grant" ? "مجاني" : "فودافون كاش"}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-bold text-foreground">{Number(sub.amount) > 0 ? formatCurrency(Number(sub.amount)) : "مجاني"}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {expandedCard === "revenue" && (
+        <Card className="border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-primary" />
+              تفاصيل الإيرادات في هذه الفترة
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {approvedPayments.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">لا توجد إيرادات مؤكدة في هذه الفترة</p>
+            ) : (
+              <div className="space-y-2">
+                {approvedPayments.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between p-3 rounded-lg border border-border/30">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                        <CreditCard className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{orgs[p.organization_id]?.name || "شركة"}</p>
+                        <p className="text-xs text-muted-foreground">{p.months} شهر — {formatDateStr(p.created_at)}</p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-bold text-foreground">{formatCurrency(Number(p.amount))}</span>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20 mt-2">
+                  <p className="text-sm font-bold text-foreground">الإجمالي</p>
+                  <p className="text-sm font-bold text-primary">{formatCurrency(totalRevenue)}</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
