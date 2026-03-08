@@ -79,17 +79,23 @@ interface PlanCardsProps {
 
 export default function PlanCards({ selectedPlanId, onSelectPlan, hasPendingPayment, isAdmin }: PlanCardsProps) {
   const [priceOverrides, setPriceOverrides] = useState<Record<number, number>>({});
+  const [hiddenPlans, setHiddenPlans] = useState<number[]>([]);
 
   useEffect(() => {
+    // Load prices and hidden plans in parallel
     supabase
       .from("admin_settings")
-      .select("setting_value")
-      .eq("setting_key", "plan_prices")
+      .select("setting_key, setting_value")
+      .in("setting_key", ["plan_prices", "hidden_plans"])
       .is("organization_id", null)
-      .maybeSingle()
       .then(({ data }) => {
         if (data) {
-          try { setPriceOverrides(JSON.parse(data.setting_value)); } catch {}
+          for (const row of data) {
+            try {
+              if (row.setting_key === "plan_prices") setPriceOverrides(JSON.parse(row.setting_value));
+              if (row.setting_key === "hidden_plans") setHiddenPlans(JSON.parse(row.setting_value));
+            } catch {}
+          }
         }
       });
   }, []);
@@ -100,7 +106,7 @@ export default function PlanCards({ selectedPlanId, onSelectPlan, hasPendingPaym
     <div className="space-y-4">
       <h2 className="text-lg font-bold text-foreground">اختر الباقة المناسبة</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {PLANS.map((plan) => {
+        {PLANS.filter(plan => !hiddenPlans.includes(plan.id)).map((plan) => {
           const isSelected = selectedPlanId === plan.id;
           const displayPrice = getPrice(plan);
           return (

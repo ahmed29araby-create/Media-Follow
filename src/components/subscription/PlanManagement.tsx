@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   ChevronDown, ChevronUp, Pencil, Save, X, Users, CheckCircle,
-  TrendingUp, TrendingDown, Percent, DollarSign, Settings2,
+  TrendingUp, TrendingDown, Percent, DollarSign, Settings2, Eye, EyeOff,
 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,7 @@ interface PlanPriceOverride {
 export default function PlanManagement() {
   const [expanded, setExpanded] = useState(false);
   const [prices, setPrices] = useState<PlanPriceOverride>({});
+  const [hiddenPlans, setHiddenPlans] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
   const [editingPlanId, setEditingPlanId] = useState<number | null>(null);
   const [editPrice, setEditPrice] = useState("");
@@ -37,6 +38,7 @@ export default function PlanManagement() {
 
   useEffect(() => {
     loadPrices();
+    loadHiddenPlans();
   }, []);
 
   const loadPrices = async () => {
@@ -51,6 +53,49 @@ export default function PlanManagement() {
         setPrices(JSON.parse(data.setting_value));
       } catch {}
     }
+  };
+
+  const loadHiddenPlans = async () => {
+    const { data } = await supabase
+      .from("admin_settings")
+      .select("setting_value")
+      .eq("setting_key", "hidden_plans")
+      .is("organization_id", null)
+      .maybeSingle();
+    if (data) {
+      try { setHiddenPlans(JSON.parse(data.setting_value)); } catch {}
+    }
+  };
+
+  const saveHiddenPlans = async (newHidden: number[]) => {
+    const value = JSON.stringify(newHidden);
+    const { data: existing } = await supabase
+      .from("admin_settings")
+      .select("id")
+      .eq("setting_key", "hidden_plans")
+      .is("organization_id", null)
+      .maybeSingle();
+
+    let error;
+    if (existing) {
+      ({ error } = await supabase.from("admin_settings").update({ setting_value: value }).eq("id", existing.id));
+    } else {
+      ({ error } = await supabase.from("admin_settings").insert({ setting_key: "hidden_plans", setting_value: value, organization_id: null }));
+    }
+
+    if (error) {
+      toast.error("حدث خطأ أثناء الحفظ");
+    } else {
+      setHiddenPlans(newHidden);
+      toast.success(newHidden.length > hiddenPlans.length ? "تم إخفاء الباقة" : "تم إظهار الباقة");
+    }
+  };
+
+  const togglePlanVisibility = (planId: number) => {
+    const newHidden = hiddenPlans.includes(planId)
+      ? hiddenPlans.filter(id => id !== planId)
+      : [...hiddenPlans, planId];
+    saveHiddenPlans(newHidden);
   };
 
   const getPrice = (plan: Plan) => prices[plan.id] ?? plan.price;
@@ -194,13 +239,15 @@ export default function PlanManagement() {
               const currentPrice = getPrice(plan);
               const isEditing = editingPlanId === plan.id;
               const isChanged = prices[plan.id] !== undefined && prices[plan.id] !== plan.price;
+              const isHidden = hiddenPlans.includes(plan.id);
 
               return (
                 <Card
                   key={plan.id}
                   className={cn(
                     "relative overflow-hidden border-border/50 transition-all",
-                    isChanged && "border-primary/40"
+                    isChanged && "border-primary/40",
+                    isHidden && "opacity-50"
                   )}
                 >
                   {plan.popular && (
@@ -214,11 +261,18 @@ export default function PlanManagement() {
                         <span className="text-primary">{plan.icon}</span>
                         <CardTitle className="text-xs font-bold">{plan.name}</CardTitle>
                       </div>
-                      {isChanged && (
-                        <Badge variant="outline" className="text-[9px] px-1 py-0 text-primary border-primary/30">
-                          معدّل
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-1">
+                        {isChanged && (
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 text-primary border-primary/30">
+                            معدّل
+                          </Badge>
+                        )}
+                        {isHidden && (
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 text-destructive border-destructive/30">
+                            مخفية
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-2 pb-3">
@@ -283,6 +337,16 @@ export default function PlanManagement() {
                             <TrendingDown className="h-3 w-3" />
                           </Button>
                         </div>
+
+                        <Button
+                          size="sm"
+                          variant={isHidden ? "default" : "secondary"}
+                          className="w-full h-7 text-[10px] gap-1"
+                          onClick={() => togglePlanVisibility(plan.id)}
+                        >
+                          {isHidden ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                          {isHidden ? "إظهار الباقة" : "إخفاء الباقة"}
+                        </Button>
                       </>
                     )}
                   </CardContent>
