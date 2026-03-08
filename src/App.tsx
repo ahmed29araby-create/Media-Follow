@@ -43,23 +43,35 @@ function OrgDisabledScreen() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6" dir="rtl">
-      <div className="max-w-md w-full text-center space-y-6">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-destructive/5 blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-primary/5 blur-3xl" />
+      </div>
+      <div className="relative max-w-md w-full text-center space-y-6 bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8">
         <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-destructive/10 mx-auto">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-destructive" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
         </div>
-        <h1 className="text-2xl font-bold text-foreground">تم تعطيل الشركة</h1>
-        <p className="text-muted-foreground">لعدم تجديد الاشتراك</p>
-        <p className="text-sm text-muted-foreground">يرجى تجديد الاشتراك لاستعادة الوصول إلى النظام.</p>
-        {isAdmin && (
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold text-foreground">تم تعطيل الشركة</h1>
+          <p className="text-base text-muted-foreground">بسبب عدم تجديد الاشتراك</p>
+        </div>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          تم إيقاف الوصول إلى النظام مؤقتاً. يرجى تجديد الاشتراك لاستعادة جميع خدمات الشركة والوصول الكامل للنظام.
+        </p>
+        {isAdmin ? (
           <button
             onClick={() => setShowSubscription(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-8 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors w-full"
           >
             تجديد الاشتراك
           </button>
+        ) : (
+          <p className="text-sm text-muted-foreground bg-secondary/50 rounded-lg p-3">
+            يرجى التواصل مع مسؤول الشركة لتجديد الاشتراك.
+          </p>
         )}
         <div>
-          <button onClick={signOut} className="text-sm text-muted-foreground hover:underline">تسجيل الخروج</button>
+          <button onClick={signOut} className="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors">تسجيل الخروج</button>
         </div>
       </div>
     </div>
