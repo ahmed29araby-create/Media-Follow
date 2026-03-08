@@ -13,7 +13,8 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { Building2, Plus, Users, Activity, Loader2, Eye, EyeOff, CheckCircle, XCircle, Shield, Globe, Zap, Info, Trash2, CalendarDays, Ban, Power } from "lucide-react";
+import { Building2, Plus, Users, Activity, Loader2, Eye, EyeOff, CheckCircle, XCircle, Shield, Globe, Zap, Info, Trash2, CalendarDays, Ban, Power, CreditCard } from "lucide-react";
+import SubscriptionManager from "@/components/SubscriptionManager";
 import { Badge } from "@/components/ui/badge";
 
 interface Organization {
@@ -280,7 +281,7 @@ export default function SuperAdminDashboard() {
 
       {/* Details Dialog */}
       <Dialog open={!!detailsOrg} onOpenChange={(open) => { if (!open) setDetailsOrg(null); }}>
-        <DialogContent className="bg-card border-border max-w-md" dir="rtl">
+        <DialogContent className="bg-card border-border max-w-md max-h-[85vh] overflow-y-auto" dir="rtl">
           <DialogHeader>
             <DialogTitle className="text-foreground flex items-center gap-2">
               <Building2 className="h-5 w-5 text-primary" />
@@ -305,6 +306,15 @@ export default function SuperAdminDashboard() {
                     {formatDate(detailsOrg.created_at)}
                   </span>
                 </div>
+              </div>
+
+              {/* Subscription management */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-primary" />
+                  إدارة الاشتراك
+                </h3>
+                <SubscriptionManager organizationId={detailsOrg.id} organizationName={detailsOrg.name} />
               </div>
 
               <Button

@@ -1,5 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Upload,
@@ -49,6 +49,7 @@ interface AppSidebarProps {
 export default function AppSidebar({ open, onToggle }: AppSidebarProps) {
   const { user, role, isSuperAdmin, isAdmin, signOut, organizationName } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -171,7 +172,7 @@ export default function AppSidebar({ open, onToggle }: AppSidebarProps) {
             </div>
             <div className="p-1.5">
               <button
-                onClick={() => { setProfileMenuOpen(false); /* TODO: navigate to subscription */ }}
+                onClick={() => { setProfileMenuOpen(false); navigate("/subscription"); }}
                 className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
               >
                 <CreditCard className="h-4 w-4" />

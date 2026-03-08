@@ -310,6 +310,103 @@ export type Database = {
           },
         ]
       }
+      subscription_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          months: number
+          organization_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          screenshot_path: string | null
+          sender_phone: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          months?: number
+          organization_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          screenshot_path?: string | null
+          sender_phone?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          months?: number
+          organization_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          screenshot_path?: string | null
+          sender_phone?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_payments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          amount: number
+          created_at: string
+          ends_at: string
+          granted_by: string | null
+          id: string
+          months: number
+          notes: string | null
+          organization_id: string
+          payment_method: string
+          starts_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          ends_at: string
+          granted_by?: string | null
+          id?: string
+          months?: number
+          notes?: string | null
+          organization_id: string
+          payment_method?: string
+          starts_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          ends_at?: string
+          granted_by?: string | null
+          id?: string
+          months?: number
+          notes?: string | null
+          organization_id?: string
+          payment_method?: string
+          starts_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
