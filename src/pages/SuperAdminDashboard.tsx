@@ -365,6 +365,51 @@ export default function SuperAdminDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Toggle (Disable/Enable) Confirmation */}
+      <AlertDialog open={!!toggleOrg} onOpenChange={(open) => { if (!open) { setToggleOrg(null); setTogglePassword(""); } }}>
+        <AlertDialogContent className="bg-card border-border" dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className={`flex items-center gap-2 ${toggleOrg?.is_active ? "text-destructive" : "text-primary"}`}>
+              {toggleOrg?.is_active ? <Ban className="h-5 w-5" /> : <Power className="h-5 w-5" />}
+              {toggleOrg?.is_active ? "تأكيد تعطيل الشركة" : "تأكيد تفعيل الشركة"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              {toggleOrg?.is_active
+                ? <>سيتم تعطيل شركة <strong className="text-foreground">{toggleOrg?.name}</strong> ولن يتمكن أي مستخدم من تسجيل الدخول حتى يتم تفعيلها مرة أخرى.</>
+                : <>سيتم إعادة تفعيل شركة <strong className="text-foreground">{toggleOrg?.name}</strong> وسيتمكن المستخدمون من تسجيل الدخول مجدداً.</>
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 py-2">
+            <Label>أدخل كلمة المرور الخاصة بك للتأكيد</Label>
+            <div className="relative">
+              <Input
+                value={togglePassword}
+                onChange={e => setTogglePassword(e.target.value)}
+                type={showTogglePassword ? "text" : "password"}
+                placeholder="••••••••••••"
+                dir="ltr"
+                className="text-left pr-10"
+              />
+              <button type="button" onClick={() => setShowTogglePassword(!showTogglePassword)} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showTogglePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <Button
+              variant={toggleOrg?.is_active ? "destructive" : "default"}
+              onClick={handleToggle}
+              disabled={toggling || !togglePassword}
+            >
+              {toggling && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+              {toggleOrg?.is_active ? "تعطيل" : "تفعيل"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
