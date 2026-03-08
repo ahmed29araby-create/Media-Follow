@@ -216,12 +216,17 @@ export default function AppSidebar({ open, onToggle }: AppSidebarProps) {
                 </div>
               </div>
               <div
-                className="overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out"
+                className="overflow-hidden transition-all duration-300 ease-in-out"
                 style={{ width: open ? "140px" : "0px", opacity: open ? 1 : 0 }}
               >
-                <p className="text-sm font-semibold text-white truncate text-left leading-9">
-                  {isAdmin ? (organizationName || user?.user_metadata?.display_name || user?.email) : (user?.user_metadata?.display_name || user?.email)}
+                <p className="text-sm font-semibold text-white truncate text-left leading-tight">
+                  {user?.user_metadata?.display_name || user?.email}
                 </p>
+                {!isSuperAdmin && organizationName && (
+                  <p className="text-[11px] font-bold text-primary truncate text-left leading-tight mt-0.5">
+                    ({organizationName})
+                  </p>
+                )}
               </div>
             </button>
           </TooltipTrigger>
