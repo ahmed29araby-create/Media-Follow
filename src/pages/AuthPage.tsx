@@ -309,8 +309,11 @@ export default function AuthPage() {
                 <p className="text-sm text-muted-foreground mb-2">
                   تم إرسال رسالة إلى <span className="text-foreground font-medium" dir="ltr">{normalizedEmail}</span>
                 </p>
-                <p className="text-xs text-muted-foreground mb-6">
-                  افتح الرسالة وأدخل رمز التحقق المكون من 6 أرقام، أو اضغط على الرابط في الرسالة مباشرة.
+                <p className="text-xs text-muted-foreground mb-1">
+                  أدخل الرمز المكون من 6 أرقام خلال 5 دقائق.
+                </p>
+                <p className="text-xs text-foreground mb-6" dir="ltr">
+                  {otpRemaining > 0 ? `ينتهي خلال ${formatCountdown(otpRemaining)}` : "انتهت صلاحية الرمز"}
                 </p>
                 <div className="space-y-5">
                   <div className="flex justify-center" dir="ltr">
