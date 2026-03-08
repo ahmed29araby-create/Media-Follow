@@ -20,6 +20,7 @@ import PrivacyPage from "@/pages/PrivacyPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import SubscriptionPage from "@/pages/SubscriptionPage";
 import AdminSubscriptionsPage from "@/pages/AdminSubscriptionsPage";
+import FinancialReportsPage from "@/pages/FinancialReportsPage";
 
 const queryClient = new QueryClient();
 
