@@ -29,6 +29,7 @@ const adminLinks = [
   { to: "/moderation", label: "المراجعة", icon: Shield },
   { to: "/files", label: "جميع الملفات", icon: FolderOpen },
   { to: "/settings", label: "الإعدادات", icon: Settings },
+  { to: "/privacy", label: "الخصوصية", icon: ShieldCheck },
 ];
 
 const memberLinks = [
