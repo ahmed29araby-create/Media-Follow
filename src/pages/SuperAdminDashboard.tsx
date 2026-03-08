@@ -40,6 +40,12 @@ export default function SuperAdminDashboard() {
   const [deleting, setDeleting] = useState(false);
   const [showDeletePassword, setShowDeletePassword] = useState(false);
 
+  // Toggle (disable/enable) confirmation
+  const [toggleOrg, setToggleOrg] = useState<Organization | null>(null);
+  const [togglePassword, setTogglePassword] = useState("");
+  const [toggling, setToggling] = useState(false);
+  const [showTogglePassword, setShowTogglePassword] = useState(false);
+
   const [form, setForm] = useState({
     org_name: "", org_email: "",
     admin_email: "", admin_password: "", admin_display_name: "",
