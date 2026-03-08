@@ -11,6 +11,7 @@ import {
   LogOut,
   Building2,
   Bell,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 const superAdminLinks = [
   { to: "/dashboard", label: "لوحة التحكم", icon: LayoutDashboard },
   { to: "/settings", label: "الإعدادات", icon: Settings },
+  { to: "/privacy", label: "الخصوصية", icon: ShieldCheck },
 ];
 
 const adminLinks = [
@@ -28,12 +30,14 @@ const adminLinks = [
   { to: "/moderation", label: "المراجعة", icon: Shield },
   { to: "/files", label: "جميع الملفات", icon: FolderOpen },
   { to: "/settings", label: "الإعدادات", icon: Settings },
+  { to: "/privacy", label: "الخصوصية", icon: ShieldCheck },
 ];
 
 const memberLinks = [
   { to: "/dashboard", label: "لوحة التحكم", icon: LayoutDashboard },
   { to: "/upload", label: "رفع ملفات", icon: Upload },
   { to: "/files", label: "ملفاتي", icon: FolderOpen },
+  { to: "/privacy", label: "الخصوصية", icon: ShieldCheck },
 ];
 
 export default function AppSidebar() {
