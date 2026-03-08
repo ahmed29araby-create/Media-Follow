@@ -11,6 +11,7 @@ import {
   CreditCard, Clock, CheckCircle, XCircle, Upload, Loader2, CalendarDays, Phone, AlertCircle,
 } from "lucide-react";
 import PlanCards, { PLANS, type Plan } from "@/components/subscription/PlanCards";
+import UseCreditsSection from "@/components/referral/UseCreditsSection";
 
 interface Subscription {
   id: string;
