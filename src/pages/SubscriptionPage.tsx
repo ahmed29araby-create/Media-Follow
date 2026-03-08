@@ -46,6 +46,11 @@ export default function SubscriptionPage() {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [vodafoneNumber, setVodafoneNumber] = useState("01012345678");
 
+  // Credit usage state
+  const [creditApplied, setCreditApplied] = useState(false);
+  const [creditAmount, setCreditAmount] = useState(0);
+  const [creditIds, setCreditIds] = useState<string[]>([]);
+
   const fetchData = async () => {
     if (!organizationId) return;
     const [subRes, payRes] = await Promise.all([
