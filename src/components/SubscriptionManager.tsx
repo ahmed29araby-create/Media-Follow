@@ -348,7 +348,7 @@ export default function SubscriptionManager({ organizationId, organizationName }
           {isActive ? "تمديد الاشتراك (مجاني)" : "دفع اشتراك الشركة (مجاني)"}
         </Button>
         {isActive && (
-          <Button variant="destructive" className="w-full gap-2" onClick={handleCancelSubscription}>
+          <Button variant="destructive" className="w-full gap-2" onClick={() => setCancelOpen(true)}>
             <XCircle className="h-4 w-4" />
             إلغاء الاشتراك
           </Button>
