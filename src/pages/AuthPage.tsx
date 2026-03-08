@@ -469,7 +469,12 @@ export default function AuthPage() {
                     type="button"
                     variant="ghost"
                     className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
-                    onClick={() => setStep("forgot-email")}
+                    onClick={() => {
+                      setOtpCode("");
+                      setOtpExpiresAt(null);
+                      setOtpRemaining(0);
+                      setStep("forgot-email");
+                    }}
                   >
                     نسيت كلمة المرور؟
                   </Button>
