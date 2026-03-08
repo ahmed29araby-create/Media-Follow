@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (!roleData) {
-      return redirectToApp("error", "Admin access required");
+      return closePage("error", "Admin access required");
     }
 
     // Extract client credentials
