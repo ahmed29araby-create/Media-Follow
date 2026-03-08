@@ -92,42 +92,101 @@ export default function SubscriptionPage() {
     setTimeout(() => document.getElementById("payment-form")?.scrollIntoView({ behavior: "smooth" }), 100);
   };
 
+  const finalPrice = selectedPlan ? (creditApplied ? Math.max(0, selectedPlan.price - creditAmount) : selectedPlan.price) : 0;
+  const isFullyCoveredByCredit = creditApplied && finalPrice === 0;
+
   const handleSubmitPayment = async () => {
     if (!user || !organizationId || !selectedPlan) return;
-    if (!senderPhone.trim()) {
-      toast.error("أدخل رقم الهاتف المُحوَّل منه");
-      return;
-    }
-    if (!screenshotFile) {
-      toast.error("ارفع صورة إيصال التحويل");
-      return;
+
+    // If fully covered by credit, no need for phone/screenshot
+    if (!isFullyCoveredByCredit) {
+      if (!senderPhone.trim()) {
+        toast.error("أدخل رقم الهاتف المُحوَّل منه");
+        return;
+      }
+      if (!screenshotFile) {
+        toast.error("ارفع صورة إيصال التحويل");
+        return;
+      }
     }
 
     setSubmitting(true);
     try {
-      const ext = screenshotFile.name.split(".").pop();
-      const path = `${organizationId}/${Date.now()}.${ext}`;
-      const { error: uploadErr } = await supabase.storage
-        .from("payment_screenshots")
-        .upload(path, screenshotFile);
-      if (uploadErr) throw uploadErr;
+      let screenshotPath: string | null = null;
 
-      const { error: insertErr } = await supabase.from("subscription_payments").insert({
-        organization_id: organizationId,
-        user_id: user.id,
-        months: 1,
-        amount: selectedPlan.price,
-        sender_phone: senderPhone.trim(),
-        screenshot_path: path,
-        status: "pending",
-      });
-      if (insertErr) throw insertErr;
+      if (!isFullyCoveredByCredit && screenshotFile) {
+        const ext = screenshotFile.name.split(".").pop();
+        const path = `${organizationId}/${Date.now()}.${ext}`;
+        const { error: uploadErr } = await supabase.storage
+          .from("payment_screenshots")
+          .upload(path, screenshotFile);
+        if (uploadErr) throw uploadErr;
+        screenshotPath = path;
+      }
 
-      toast.success("تم إرسال طلب الاشتراك بنجاح! في انتظار الموافقة.");
+      // Deduct credits if applied
+      if (creditApplied && creditAmount > 0) {
+        let remainingToDeduct = creditAmount;
+        // Get credits ordered by expiry
+        const { data: creditsData } = await supabase
+          .from("referral_credits")
+          .select("id, remaining")
+          .eq("organization_id", organizationId)
+          .gt("remaining", 0)
+          .order("expires_at", { ascending: true });
+
+        for (const c of (creditsData ?? [])) {
+          if (remainingToDeduct <= 0) break;
+          const deductFromThis = Math.min(Number(c.remaining), remainingToDeduct);
+          await supabase
+            .from("referral_credits")
+            .update({ remaining: Number(c.remaining) - deductFromThis })
+            .eq("id", c.id);
+          remainingToDeduct -= deductFromThis;
+        }
+      }
+
+      if (isFullyCoveredByCredit) {
+        // Auto-approve: create subscription directly
+        const startsAt = new Date();
+        const endsAt = new Date();
+        endsAt.setMonth(endsAt.getMonth() + 1);
+        await supabase.from("subscriptions").insert({
+          organization_id: organizationId,
+          starts_at: startsAt.toISOString(),
+          ends_at: endsAt.toISOString(),
+          months: 1,
+          amount: 0,
+          payment_method: "referral_credit",
+          notes: `تم الدفع بالكامل من رصيد الإحالة — باقة ${selectedPlan.name} (${selectedPlan.price} جنيه)`,
+        });
+        await supabase.from("organizations").update({ is_active: true }).eq("id", organizationId);
+        toast.success("تم تفعيل الاشتراك باستخدام رصيد الإحالة!");
+      } else {
+        // Submit payment request
+        const { error: insertErr } = await supabase.from("subscription_payments").insert({
+          organization_id: organizationId,
+          user_id: user.id,
+          months: 1,
+          amount: finalPrice,
+          sender_phone: senderPhone.trim() || null,
+          screenshot_path: screenshotPath,
+          status: "pending",
+        });
+        if (insertErr) throw insertErr;
+        toast.success(creditApplied
+          ? `تم إرسال طلب الاشتراك بخصم ${creditAmount} جنيه! في انتظار الموافقة.`
+          : "تم إرسال طلب الاشتراك بنجاح! في انتظار الموافقة."
+        );
+      }
+
       setSenderPhone("");
       setScreenshotFile(null);
       setShowPaymentForm(false);
       setSelectedPlan(null);
+      setCreditApplied(false);
+      setCreditAmount(0);
+      setCreditIds([]);
       fetchData();
     } catch (err: any) {
       toast.error(err.message || "حدث خطأ أثناء الإرسال");
