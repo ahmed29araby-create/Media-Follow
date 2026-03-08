@@ -12,6 +12,7 @@ import UploadPage from "@/pages/UploadPage";
 import FilesPage from "@/pages/FilesPage";
 import ModerationPage from "@/pages/ModerationPage";
 import AdminTeamPage from "@/pages/AdminTeamPage";
+import AdminDashboard from "@/pages/AdminDashboard";
 import SettingsPage from "@/pages/SettingsPage";
 import NotificationsPage from "@/pages/NotificationsPage";
 import NotFound from "@/pages/NotFound";
@@ -48,6 +49,7 @@ function ProtectedRoutes() {
         {isAdmin && <Route path="/team" element={<AdminTeamPage />} />}
         {isAdmin && <Route path="/moderation" element={<ModerationPage />} />}
         {(isAdmin || isSuperAdmin) && <Route path="/settings" element={<SettingsPage />} />}
+        {isSuperAdmin && <Route path="/admin-dashboard" element={<AdminDashboard />} />}
         <Route path="/privacy" element={<PrivacyPage />} />
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
