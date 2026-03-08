@@ -154,6 +154,14 @@ function OrgDisabledScreen() {
           )
         ) : (
           <>
+            {/* Show rejection notice */}
+            {lastAppealStatus === "rejected" && !showAppeal && !appealSent && (
+              <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4">
+                <p className="text-sm text-destructive font-medium">✕ تم رفض طلب إعادة التفعيل</p>
+                <p className="text-xs text-muted-foreground mt-1">تم مراجعة طلبك ورفضه من قِبل إدارة المنصة. يمكنك تقديم طلب جديد.</p>
+              </div>
+            )}
+
             {appealSent ? (
               <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
                 <p className="text-sm text-primary font-medium">✓ تم إرسال طلبك بنجاح</p>
@@ -184,18 +192,18 @@ function OrgDisabledScreen() {
                   </button>
                 </div>
               </div>
-            ) : isAdmin ? (
+            ) : isAdmin && !loadingAppeal ? (
               <button
                 onClick={() => setShowAppeal(true)}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-8 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors w-full"
               >
-                تقديم طلب إعادة تفعيل
+                {lastAppealStatus === "rejected" ? "تقديم طلب جديد" : "تقديم طلب إعادة تفعيل"}
               </button>
-            ) : (
+            ) : !isAdmin ? (
               <p className="text-sm text-muted-foreground bg-secondary/50 rounded-lg p-3">
                 يرجى التواصل مع مسؤول الشركة لتقديم طلب إعادة التفعيل.
               </p>
-            )}
+            ) : null}
           </>
         )}
 
