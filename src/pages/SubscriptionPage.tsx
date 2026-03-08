@@ -257,7 +257,7 @@ export default function SubscriptionPage() {
                 </li>
                 <li className="flex items-center gap-2 mr-4">
                   <Phone className="h-4 w-4 text-primary" />
-                  <span className="font-mono font-bold text-foreground text-lg" dir="ltr">{VODAFONE_NUMBER}</span>
+                  <span className="font-mono font-bold text-foreground text-lg" dir="ltr">{vodafoneNumber}</span>
                 </li>
                 <li>بعد التحويل، أدخل رقم الهاتف المُحوَّل منه وارفع صورة الإيصال</li>
               </ol>
