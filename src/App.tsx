@@ -39,7 +39,7 @@ function OrgDisabledScreen() {
   const isSubscriptionIssue = !disableReason;
 
   // Fetch latest appeal status
-  useState(() => {
+  useEffect(() => {
     if (!organizationId || !user) { setLoadingAppeal(false); return; }
     supabase
       .from("org_appeals")
@@ -54,7 +54,7 @@ function OrgDisabledScreen() {
         }
         setLoadingAppeal(false);
       });
-  });
+  }, [organizationId, user]);
 
   const handleSubmitAppeal = async () => {
     if (!appealText.trim() || !user || !organizationId) return;
