@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,7 +26,21 @@ import FinancialReportsPage from "@/pages/FinancialReportsPage";
 const queryClient = new QueryClient();
 
 function OrgDisabledScreen() {
-  const { signOut } = useAuth();
+  const { signOut, isAdmin } = useAuth();
+  const [showSubscription, setShowSubscription] = useState(false);
+
+  if (showSubscription) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="flex items-center justify-between p-4 border-b border-border/50" dir="rtl">
+          <button onClick={() => setShowSubscription(false)} className="text-sm text-primary hover:underline">← العودة</button>
+          <button onClick={signOut} className="text-sm text-muted-foreground hover:underline">تسجيل الخروج</button>
+        </div>
+        <SubscriptionPage />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6" dir="rtl">
       <div className="max-w-md w-full text-center space-y-6">
@@ -33,9 +48,19 @@ function OrgDisabledScreen() {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-destructive" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
         </div>
         <h1 className="text-2xl font-bold text-foreground">تم تعطيل الشركة</h1>
-        <p className="text-muted-foreground">تم تعطيل شركتك من قِبل مسؤول الموقع. لا يمكنك الوصول إلى النظام حالياً.</p>
-        <p className="text-sm text-muted-foreground">يرجى التواصل مع مسؤول الموقع لمزيد من المعلومات.</p>
-        <button onClick={signOut} className="text-sm text-primary hover:underline">تسجيل الخروج</button>
+        <p className="text-muted-foreground">لعدم تجديد الاشتراك</p>
+        <p className="text-sm text-muted-foreground">يرجى تجديد الاشتراك لاستعادة الوصول إلى النظام.</p>
+        {isAdmin && (
+          <button
+            onClick={() => setShowSubscription(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            تجديد الاشتراك
+          </button>
+        )}
+        <div>
+          <button onClick={signOut} className="text-sm text-muted-foreground hover:underline">تسجيل الخروج</button>
+        </div>
       </div>
     </div>
   );
