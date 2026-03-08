@@ -328,12 +328,16 @@ export default function AuthPage() {
                       </InputOTPGroup>
                     </InputOTP>
                   </div>
-                  <Button className="w-full h-11" onClick={handleVerifyOTP} disabled={loading || otpCode.length !== 6}>
+                  <Button
+                    className="w-full h-11"
+                    onClick={handleVerifyOTP}
+                    disabled={loading || otpCode.length !== 6 || otpRemaining <= 0}
+                  >
                     {loading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                     تحقق
                   </Button>
                   <Button variant="ghost" className="w-full text-xs" onClick={handleSendOTP} disabled={loading}>
-                    إعادة إرسال الرمز
+                    إعادة إرسال رمز جديد
                   </Button>
                 </div>
               </>
