@@ -38,6 +38,7 @@ export default function PlanManagement() {
 
   useEffect(() => {
     loadPrices();
+    loadHiddenPlans();
   }, []);
 
   const loadPrices = async () => {
