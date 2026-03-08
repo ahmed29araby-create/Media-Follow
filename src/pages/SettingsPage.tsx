@@ -26,15 +26,6 @@ export default function SettingsPage() {
       if (folderRes.data) setDriveFolderPath(folderRes.data.setting_value);
       if (emailRes.data) setConnectedEmail(emailRes.data.setting_value);
 
-      // Fetch org info
-      if (organizationId) {
-        const { data: orgData } = await supabase.from("organizations").select("name, email").eq("id", organizationId).single();
-        if (orgData) {
-          setOrgName(orgData.name);
-          setOrgEmail(orgData.email);
-        }
-      }
-
       setLoading(false);
     };
     fetchSettings();
