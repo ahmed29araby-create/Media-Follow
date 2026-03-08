@@ -28,12 +28,35 @@ export default function ModerationPage() {
 
   useEffect(() => { fetchData(); }, []);
 
+  const [syncingFiles, setSyncingFiles] = useState<Set<string>>(new Set());
+
   const handleFileAction = async (fileId: string, action: "approved" | "rejected") => {
-    const { error } = await supabase.from("files").update({ status: action }).eq("id", fileId);
-    if (error) toast.error(error.message);
-    else {
-      toast.success(`File ${action}`);
-      fetchData();
+    if (action === "approved") {
+      setSyncingFiles((prev) => new Set(prev).add(fileId));
+      try {
+        const { data, error } = await supabase.functions.invoke("sync-to-drive", {
+          body: { file_id: fileId },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        toast.success("File approved & synced to Google Drive");
+      } catch (err: any) {
+        toast.error(`Sync failed: ${err.message}`);
+      } finally {
+        setSyncingFiles((prev) => {
+          const next = new Set(prev);
+          next.delete(fileId);
+          return next;
+        });
+        fetchData();
+      }
+    } else {
+      const { error } = await supabase.from("files").update({ status: action }).eq("id", fileId);
+      if (error) toast.error(error.message);
+      else {
+        toast.success(`File rejected`);
+        fetchData();
+      }
     }
   };
 
