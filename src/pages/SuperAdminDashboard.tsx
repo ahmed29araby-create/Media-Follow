@@ -308,6 +308,15 @@ export default function SuperAdminDashboard() {
                 </div>
               </div>
 
+              {/* Subscription management */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-primary" />
+                  إدارة الاشتراك
+                </h3>
+                <SubscriptionManager organizationId={detailsOrg.id} organizationName={detailsOrg.name} />
+              </div>
+
               <Button
                 variant="destructive"
                 className="w-full gap-2"
