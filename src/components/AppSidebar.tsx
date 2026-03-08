@@ -108,7 +108,7 @@ export default function AppSidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-white truncate">
-              {user?.user_metadata?.display_name || user?.email}
+              {isAdmin ? (organizationName || user?.user_metadata?.display_name || user?.email) : (user?.user_metadata?.display_name || user?.email)}
             </p>
             <p className="text-[9px] text-white/40">{roleLabel}</p>
           </div>
