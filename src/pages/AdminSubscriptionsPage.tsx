@@ -25,6 +25,7 @@ interface PaymentRequest {
   screenshot_path: string | null;
   status: string;
   created_at: string;
+  referral_code_used: string | null;
 }
 
 interface OrgInfo {
