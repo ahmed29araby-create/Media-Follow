@@ -474,6 +474,7 @@ export type Database = {
           id: string
           months: number
           organization_id: string
+          referral_code_used: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           screenshot_path: string | null
@@ -487,6 +488,7 @@ export type Database = {
           id?: string
           months?: number
           organization_id: string
+          referral_code_used?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           screenshot_path?: string | null
@@ -500,6 +502,7 @@ export type Database = {
           id?: string
           months?: number
           organization_id?: string
+          referral_code_used?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           screenshot_path?: string | null

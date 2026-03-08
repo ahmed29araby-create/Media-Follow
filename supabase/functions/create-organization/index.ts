@@ -5,10 +5,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function generateCode(orgName: string): string {
-  const slug = orgName.toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 8);
-  const rand = Math.random().toString(36).substring(2, 8);
-  return `${slug}-${rand}`;
+function generateCode(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
 }
 
 Deno.serve(async (req) => {
@@ -71,7 +74,7 @@ Deno.serve(async (req) => {
     if (roleError) throw roleError;
 
     // Generate referral code for the new org
-    const code = generateCode(org_name);
+    const code = generateCode();
     await adminClient.from("referral_codes").insert({
       organization_id: org.id,
       code,
