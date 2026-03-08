@@ -164,13 +164,28 @@ export default function SubscriptionManager({ organizationId, organizationName }
   };
 
   const handleApprovePayment = async (payment: PaymentRequest) => {
-    const startsAt = new Date();
-    const endsAt = new Date();
-    endsAt.setMonth(endsAt.getMonth() + payment.months);
+    let subError: any = null;
+    const note = `تم الدفع عبر فودافون كاش — رقم المرسل: ${payment.sender_phone || "غير محدد"}`;
 
-    // Create subscription + update payment status
-    const [subErr, payErr] = await Promise.all([
-      supabase.from("subscriptions").insert({
+    if (subscription && new Date(subscription.ends_at) > new Date()) {
+      // Extend existing active subscription
+      const newEnd = new Date(subscription.ends_at);
+      newEnd.setMonth(newEnd.getMonth() + payment.months);
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({
+          ends_at: newEnd.toISOString(),
+          months: subscription.months + payment.months,
+          amount: Number(subscription.amount) + payment.amount,
+          notes: `${subscription.notes || ""}\n+ تجديد ${payment.months} شهر — ${note}`,
+        })
+        .eq("id", subscription.id);
+      subError = error;
+    } else {
+      const startsAt = new Date();
+      const endsAt = new Date();
+      endsAt.setMonth(endsAt.getMonth() + payment.months);
+      const { error } = await supabase.from("subscriptions").insert({
         organization_id: payment.organization_id,
         starts_at: startsAt.toISOString(),
         ends_at: endsAt.toISOString(),
@@ -178,18 +193,20 @@ export default function SubscriptionManager({ organizationId, organizationName }
         amount: payment.amount,
         granted_by: user?.id,
         payment_method: "vodafone_cash",
-        notes: `تم الدفع عبر فودافون كاش — رقم المرسل: ${payment.sender_phone || "غير محدد"}`,
-      }),
-      supabase
-        .from("subscription_payments")
-        .update({ status: "approved", reviewed_by: user?.id, reviewed_at: new Date().toISOString() })
-        .eq("id", payment.id),
-    ]);
+        notes: note,
+      });
+      subError = error;
+    }
+
+    await supabase
+      .from("subscription_payments")
+      .update({ status: "approved", reviewed_by: user?.id, reviewed_at: new Date().toISOString() })
+      .eq("id", payment.id);
 
     // Re-activate org
     await supabase.from("organizations").update({ is_active: true }).eq("id", payment.organization_id);
 
-    if (subErr.error || payErr.error) {
+    if (subError) {
       toast.error("حدث خطأ أثناء الموافقة");
     } else {
       toast.success("تم تفعيل الاشتراك بنجاح");
