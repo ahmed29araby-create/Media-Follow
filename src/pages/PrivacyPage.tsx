@@ -83,6 +83,7 @@ export default function PrivacyPage() {
     else {
       toast.success("تم تحديث اسم الشركة");
       setOrgName(editOrgName.trim());
+      await refreshOrgData();
     }
     setSavingOrg(false);
   };
