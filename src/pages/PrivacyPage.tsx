@@ -90,8 +90,8 @@ export default function PrivacyPage() {
 
   const handleEmailChange = async () => {
     const trimmed = editOrgEmail.trim().toLowerCase();
-    if (!trimmed) { toast.error("أدخل البريد الإلكتروني"); return; }
-    if (trimmed === orgEmail.toLowerCase()) { toast.error("البريد هو نفس البريد الحالي"); return; }
+    if (!trimmed) { toast.error("أدخل البريد الإلكتروني", { id: "email-required" }); return; }
+    if (trimmed === orgEmail.toLowerCase()) { toast.error("البريد هو نفس البريد الحالي", { id: "email-same" }); return; }
     setEmailChangeLoading(true);
     // Update org email in DB
     const { error } = await supabase.from("organizations").update({ email: trimmed }).eq("id", organizationId!);
