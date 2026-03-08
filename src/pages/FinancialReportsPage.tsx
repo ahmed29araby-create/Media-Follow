@@ -65,12 +65,21 @@ export default function FinancialReportsPage() {
   const paidSubs = filteredSubs.filter(s => s.payment_method === "vodafone_cash");
   const freeSubs = filteredSubs.filter(s => s.payment_method === "free_grant");
   const paidRevenue = paidSubs.reduce((sum, s) => sum + Number(s.amount), 0);
-  const activeOrgs = Object.values(orgs).filter(o => o.is_active).length;
+  const totalOrgs = Object.keys(orgs).length;
 
-  // Active subscriptions (not expired)
+  // Active subscriptions — count unique orgs with active subscription (latest per org)
   const now = new Date();
-  const activeSubs = subscriptions.filter(s => new Date(s.ends_at) > now);
-  const expiredSubs = subscriptions.filter(s => new Date(s.ends_at) <= now);
+  const latestSubPerOrg: Record<string, Subscription> = {};
+  for (const s of subscriptions) {
+    if (!latestSubPerOrg[s.organization_id] || new Date(s.created_at) > new Date(latestSubPerOrg[s.organization_id].created_at)) {
+      latestSubPerOrg[s.organization_id] = s;
+    }
+  }
+  const activeOrgIds = Object.entries(latestSubPerOrg).filter(([_, s]) => new Date(s.ends_at) > now).map(([id]) => id);
+  const activeSubs = activeOrgIds.length;
+
+  // Free grant orgs — unique orgs whose latest subscription is free_grant AND still active
+  const freeActiveOrgs = Object.entries(latestSubPerOrg).filter(([_, s]) => s.payment_method === "free_grant" && new Date(s.ends_at) > now).length;
 
   // Monthly revenue chart data
   const monthlyData = MONTHS_AR.map((name, i) => {
@@ -169,8 +178,8 @@ export default function FinancialReportsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground">{activeSubs.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">من أصل {subscriptions.length}</p>
+            <div className="text-3xl font-bold text-foreground">{activeSubs}</div>
+            <p className="text-xs text-muted-foreground mt-1">من أصل {totalOrgs} شركة</p>
           </CardContent>
         </Card>
 
@@ -182,7 +191,7 @@ export default function FinancialReportsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground">{freeSubs.length}</div>
+            <div className="text-3xl font-bold text-foreground">{freeActiveOrgs}</div>
             <p className="text-xs text-muted-foreground mt-1">من صاحب الموقع</p>
           </CardContent>
         </Card>
