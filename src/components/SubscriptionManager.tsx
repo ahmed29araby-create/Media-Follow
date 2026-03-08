@@ -251,6 +251,22 @@ export default function SubscriptionManager({ organizationId, organizationName }
     if (subError) {
       toast.error("حدث خطأ أثناء الموافقة");
     } else {
+      // Send notification to org members
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("organization_id", payment.organization_id);
+      if (profiles) {
+        for (const p of profiles) {
+          await supabase.from("notifications").insert({
+            user_id: p.user_id,
+            organization_id: payment.organization_id,
+            title: "✅ تم تجديد الاشتراك",
+            message: `تم الموافقة على طلب الاشتراك وتفعيل الحساب لمدة ${payment.months} شهر.`,
+            type: "sub_approved",
+          });
+        }
+      }
       toast.success("تم تفعيل الاشتراك بنجاح");
       fetchData();
     }
