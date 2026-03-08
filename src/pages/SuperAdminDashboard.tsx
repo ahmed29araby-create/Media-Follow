@@ -9,7 +9,11 @@ import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Building2, Plus, Users, Activity, Loader2, Eye, EyeOff, CheckCircle, XCircle, Shield, Globe, Zap } from "lucide-react";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { Building2, Plus, Users, Activity, Loader2, Eye, EyeOff, CheckCircle, XCircle, Shield, Globe, Zap, Info, Trash2, CalendarDays } from "lucide-react";
 
 interface Organization {
   id: string;
@@ -27,13 +31,22 @@ export default function SuperAdminDashboard() {
   const [creating, setCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // Details dialog
+  const [detailsOrg, setDetailsOrg] = useState<Organization | null>(null);
+
+  // Delete confirmation
+  const [deleteOrg, setDeleteOrg] = useState<Organization | null>(null);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
+
   const [form, setForm] = useState({
     org_name: "", org_email: "",
     admin_email: "", admin_password: "", admin_display_name: "",
   });
 
   const fetchOrgs = async () => {
-    const { data } = await supabase.from("organizations").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from("organizations").select("*").order("created_at", { ascending: true });
     setOrgs(data ?? []);
     setLoading(false);
   };
@@ -56,6 +69,29 @@ export default function SuperAdminDashboard() {
       fetchOrgs();
     }
     setCreating(false);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteOrg || !deletePassword) return;
+    setDeleting(true);
+    const { data, error } = await supabase.functions.invoke("delete-organization", {
+      body: { organization_id: deleteOrg.id, password: deletePassword },
+    });
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "فشل حذف الشركة");
+    } else {
+      toast.success("تم حذف الشركة بنجاح");
+      setDeleteOrg(null);
+      setDetailsOrg(null);
+      setDeletePassword("");
+      fetchOrgs();
+    }
+    setDeleting(false);
+  };
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
   };
 
   const stats = [
@@ -203,19 +239,95 @@ export default function SuperAdminDashboard() {
                     <p className="text-xs text-muted-foreground" dir="ltr">{org.email}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  {org.is_active ? (
-                    <span className="status-approved"><CheckCircle className="h-3 w-3" /> نشط</span>
-                  ) : (
-                    <span className="status-rejected"><XCircle className="h-3 w-3" /> معطل</span>
-                  )}
-                  <p className="text-xs text-muted-foreground">{new Date(org.created_at).toLocaleDateString("ar")}</p>
-                </div>
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setDetailsOrg(org)}>
+                  <Info className="h-4 w-4" />
+                  تفاصيل الشركة
+                </Button>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Details Dialog */}
+      <Dialog open={!!detailsOrg} onOpenChange={(open) => { if (!open) setDetailsOrg(null); }}>
+        <DialogContent className="bg-card border-border max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-foreground flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              تفاصيل الشركة
+            </DialogTitle>
+          </DialogHeader>
+          {detailsOrg && (
+            <div className="space-y-5">
+              <div className="glass-panel p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">اسم الشركة</span>
+                  <span className="text-sm font-bold text-foreground">{detailsOrg.name}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">البريد الإلكتروني</span>
+                  <span className="text-sm text-foreground" dir="ltr">{detailsOrg.email}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">تاريخ الانضمام</span>
+                  <span className="text-sm font-semibold text-primary flex items-center gap-1.5">
+                    <CalendarDays className="h-4 w-4" />
+                    {formatDate(detailsOrg.created_at)}
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                variant="destructive"
+                className="w-full gap-2"
+                onClick={() => setDeleteOrg(detailsOrg)}
+              >
+                <Trash2 className="h-4 w-4" />
+                حذف الشركة نهائياً
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteOrg} onOpenChange={(open) => { if (!open) { setDeleteOrg(null); setDeletePassword(""); } }}>
+        <AlertDialogContent className="bg-card border-border" dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive flex items-center gap-2">
+              <Trash2 className="h-5 w-5" />
+              تأكيد حذف الشركة
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              سيتم حذف شركة <strong className="text-foreground">{deleteOrg?.name}</strong> وجميع بياناتها وحسابات المستخدمين المرتبطة بها نهائياً. هذا الإجراء لا يمكن التراجع عنه.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 py-2">
+            <Label>أدخل كلمة المرور الخاصة بك للتأكيد</Label>
+            <div className="relative">
+              <Input
+                value={deletePassword}
+                onChange={e => setDeletePassword(e.target.value)}
+                type={showDeletePassword ? "text" : "password"}
+                placeholder="••••••••••••"
+                dir="ltr"
+                className="text-left pr-10"
+              />
+              <button type="button" onClick={() => setShowDeletePassword(!showDeletePassword)} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting || !deletePassword}>
+              {deleting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+              حذف نهائي
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
