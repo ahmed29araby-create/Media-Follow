@@ -30,6 +30,7 @@ const AuthContext = createContext<AuthContextType>({
   accountStatus: null,
   organizationId: null,
   organizationName: null,
+  isOrgActive: true,
   signOut: async () => {},
 });
 
