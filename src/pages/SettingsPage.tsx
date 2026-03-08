@@ -36,6 +36,28 @@ export default function SettingsPage() {
       setLoading(false);
     };
     fetchSettings();
+
+    // Handle Google Drive callback redirect
+    const params = new URLSearchParams(window.location.search);
+    const gdStatus = params.get("google_drive");
+    if (gdStatus === "connected") {
+      const email = params.get("gd_message");
+      if (email) setConnectedEmail(email);
+      toast.success("تم ربط Google Drive بنجاح!");
+      // Clean URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete("google_drive");
+      url.searchParams.delete("gd_message");
+      window.history.replaceState({}, "", url.toString());
+      setConnecting(false);
+    } else if (gdStatus === "error") {
+      toast.error(params.get("gd_message") || "فشل ربط Google Drive");
+      const url = new URL(window.location.href);
+      url.searchParams.delete("google_drive");
+      url.searchParams.delete("gd_message");
+      window.history.replaceState({}, "", url.toString());
+      setConnecting(false);
+    }
   }, [organizationId, isSuperAdmin]);
 
   const saveSetting = async (key: string, value: string) => {
