@@ -322,6 +322,76 @@ export default function SuperAdminDashboard() {
         ))}
       </div>
 
+      {/* Pending Registration Requests */}
+      {requests.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Clock className="h-5 w-5 text-warning" />
+              طلبات التسجيل ({requests.length})
+            </h2>
+          </div>
+          <div className="grid gap-3">
+            {requests.map((req, i) => (
+              <div key={req.id} className="glass-panel p-5 border-warning/30 hover:border-warning/50 transition-all" style={{ animationDelay: `${i * 50}ms` }}>
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-warning/10">
+                      <Building2 className="h-6 w-6 text-warning" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-foreground">{req.org_name}</p>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1" dir="ltr">
+                          <Mail className="h-3 w-3" />
+                          {req.org_email}
+                        </span>
+                        {req.whatsapp_phone && (
+                          <a
+                            href={`https://wa.me/${req.whatsapp_phone.replace(/[^0-9]/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-primary hover:underline"
+                            dir="ltr"
+                          >
+                            <Phone className="h-3 w-3" />
+                            {req.whatsapp_phone}
+                          </a>
+                        )}
+                        {req.referral_code && (
+                          <span className="text-primary">كود: {req.referral_code}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-destructive/50 text-destructive hover:bg-destructive/10"
+                      onClick={() => handleRejectRequest(req)}
+                      disabled={processingRequest === req.id}
+                    >
+                      {processingRequest === req.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+                      <span className="mr-1">رفض</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => handleApproveRequest(req)}
+                      disabled={processingRequest === req.id}
+                    >
+                      {processingRequest === req.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                      قبول وتفعيل
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Organizations list */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
