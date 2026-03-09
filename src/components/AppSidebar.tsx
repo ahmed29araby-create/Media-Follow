@@ -190,7 +190,7 @@ export default function AppSidebar({ open, onToggle }: AppSidebarProps) {
                 )}
               </div>
             </div>
-            {isAdmin && (
+            {(isAdmin && !isSuperAdmin) && (
               <div className="p-1.5">
                 <button
                   onClick={() => { setProfileMenuOpen(false); navigate("/subscription"); }}
