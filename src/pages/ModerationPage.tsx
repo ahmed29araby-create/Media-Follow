@@ -20,6 +20,7 @@ export default function ModerationPage() {
   const [pendingFiles, setPendingFiles] = useState<FileRow[]>([]);
   const [changeRequests, setChangeRequests] = useState<ChangeRequestWithFile[]>([]);
   const [syncingFiles, setSyncingFiles] = useState<Set<string>>(new Set());
+  const [previewFile, setPreviewFile] = useState<FileRow | null>(null);
 
   const fetchData = async () => {
     const [filesRes, requestsRes] = await Promise.all([
