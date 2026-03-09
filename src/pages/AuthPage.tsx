@@ -172,7 +172,18 @@ export default function AuthPage() {
           </Button>
         </form>
 
-        <div className="mt-6 pt-4 border-t border-border">
+        <div className="mt-4">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-11"
+            onClick={() => navigate("/register-organization")}
+          >
+            إنشاء شركة جديدة
+          </Button>
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-border">
           <p className="text-xs text-center text-muted-foreground">
             تواصل مع مسؤول الشركة للحصول على حساب أو إعادة تعيين كلمة المرور
           </p>

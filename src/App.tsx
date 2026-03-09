@@ -24,6 +24,7 @@ import SubscriptionPage from "@/pages/SubscriptionPage";
 import AdminSubscriptionsPage from "@/pages/AdminSubscriptionsPage";
 import FinancialReportsPage from "@/pages/FinancialReportsPage";
 import OffersPage from "@/pages/OffersPage";
+import RegisterOrganizationPage from "@/pages/RegisterOrganizationPage";
 
 const queryClient = new QueryClient();
 
@@ -272,6 +273,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage />} />
+      <Route path="/register-organization" element={user ? <Navigate to="/dashboard" replace /> : <RegisterOrganizationPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/*" element={<ProtectedRoutes />} />
     </Routes>

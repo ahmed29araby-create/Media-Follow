@@ -13,7 +13,7 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { Building2, Plus, Users, Activity, Loader2, Eye, EyeOff, CheckCircle, XCircle, Shield, Globe, Zap, Info, Trash2, CalendarDays, Ban, Power, CreditCard } from "lucide-react";
+import { Building2, Plus, Users, Activity, Loader2, Eye, EyeOff, CheckCircle, XCircle, Shield, Globe, Zap, Info, Trash2, CalendarDays, Ban, Power, CreditCard, Clock, Phone, Mail } from "lucide-react";
 import SubscriptionManager from "@/components/SubscriptionManager";
 import { Badge } from "@/components/ui/badge";
 
@@ -22,6 +22,17 @@ interface Organization {
   name: string;
   email: string;
   is_active: boolean;
+  created_at: string;
+}
+
+interface OrgRequest {
+  id: string;
+  org_name: string;
+  org_email: string;
+  admin_password: string;
+  referral_code: string | null;
+  whatsapp_phone: string | null;
+  status: string;
   created_at: string;
 }
 
@@ -67,13 +78,70 @@ export default function SuperAdminDashboard() {
     org_name: "", org_email: "", admin_password: "", referral_code: "",
   });
 
+  // Registration requests
+  const [requests, setRequests] = useState<OrgRequest[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(true);
+  const [processingRequest, setProcessingRequest] = useState<string | null>(null);
+
   const fetchOrgs = async () => {
     const { data } = await supabase.from("organizations").select("*").order("created_at", { ascending: true });
     setOrgs(data ?? []);
     setLoading(false);
   };
 
-  useEffect(() => { fetchOrgs(); }, []);
+  const fetchRequests = async () => {
+    const { data } = await supabase
+      .from("org_registration_requests")
+      .select("*")
+      .eq("status", "pending")
+      .order("created_at", { ascending: true });
+    setRequests(data ?? []);
+    setLoadingRequests(false);
+  };
+
+  useEffect(() => { fetchOrgs(); fetchRequests(); }, []);
+
+  const handleApproveRequest = async (request: OrgRequest) => {
+    setProcessingRequest(request.id);
+    const { data, error } = await supabase.functions.invoke("create-organization", {
+      body: {
+        org_name: request.org_name,
+        org_email: request.org_email,
+        admin_password: request.admin_password,
+        referral_code: request.referral_code || undefined,
+      },
+    });
+
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "فشل إنشاء الشركة");
+    } else {
+      // Update request status
+      await supabase
+        .from("org_registration_requests")
+        .update({ status: "approved", reviewed_at: new Date().toISOString(), reviewed_by: user?.id })
+        .eq("id", request.id);
+      toast.success("تم قبول وتفعيل الشركة بنجاح!");
+      fetchOrgs();
+      fetchRequests();
+    }
+    setProcessingRequest(null);
+  };
+
+  const handleRejectRequest = async (request: OrgRequest) => {
+    setProcessingRequest(request.id);
+    const { error } = await supabase
+      .from("org_registration_requests")
+      .update({ status: "rejected", reviewed_at: new Date().toISOString(), reviewed_by: user?.id })
+      .eq("id", request.id);
+
+    if (error) {
+      toast.error("فشل رفض الطلب");
+    } else {
+      toast.success("تم رفض الطلب");
+      fetchRequests();
+    }
+    setProcessingRequest(null);
+  };
 
   const handleCreate = async () => {
     if (form.admin_password.length < 12) {
@@ -253,6 +321,76 @@ export default function SuperAdminDashboard() {
           </Card>
         ))}
       </div>
+
+      {/* Pending Registration Requests */}
+      {requests.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Clock className="h-5 w-5 text-warning" />
+              طلبات التسجيل ({requests.length})
+            </h2>
+          </div>
+          <div className="grid gap-3">
+            {requests.map((req, i) => (
+              <div key={req.id} className="glass-panel p-5 border-warning/30 hover:border-warning/50 transition-all" style={{ animationDelay: `${i * 50}ms` }}>
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-warning/10">
+                      <Building2 className="h-6 w-6 text-warning" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-foreground">{req.org_name}</p>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1" dir="ltr">
+                          <Mail className="h-3 w-3" />
+                          {req.org_email}
+                        </span>
+                        {req.whatsapp_phone && (
+                          <a
+                            href={`https://wa.me/${req.whatsapp_phone.replace(/[^0-9]/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-primary hover:underline"
+                            dir="ltr"
+                          >
+                            <Phone className="h-3 w-3" />
+                            {req.whatsapp_phone}
+                          </a>
+                        )}
+                        {req.referral_code && (
+                          <span className="text-primary">كود: {req.referral_code}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-destructive/50 text-destructive hover:bg-destructive/10"
+                      onClick={() => handleRejectRequest(req)}
+                      disabled={processingRequest === req.id}
+                    >
+                      {processingRequest === req.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+                      <span className="mr-1">رفض</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => handleApproveRequest(req)}
+                      disabled={processingRequest === req.id}
+                    >
+                      {processingRequest === req.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                      قبول وتفعيل
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Organizations list */}
       <div className="space-y-4">
