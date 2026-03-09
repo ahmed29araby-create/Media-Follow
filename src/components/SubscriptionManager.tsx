@@ -154,21 +154,25 @@ export default function SubscriptionManager({ organizationId, organizationName }
     if (error) {
       toast.error(error.message);
     } else {
-      // Send notification to org members
+      // Send notification to org admins only
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id")
         .eq("organization_id", organizationId);
-      if (profiles) {
-        for (const p of profiles) {
-          await supabase.from("notifications").insert({
-            user_id: p.user_id,
-            organization_id: organizationId,
-            title: "🎁 تم تجديد الاشتراك مجاناً",
-            message: `تم تجديد اشتراك ${organizationName} مجاناً من صاحب الموقع لمدة ${months} شهر.`,
-            type: "sub_free_grant",
-          });
-        }
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+      const adminIds = new Set(adminRoles?.map(r => r.user_id) ?? []);
+      const adminProfiles = profiles?.filter(p => adminIds.has(p.user_id)) ?? [];
+      for (const p of adminProfiles) {
+        await supabase.from("notifications").insert({
+          user_id: p.user_id,
+          organization_id: organizationId,
+          title: "🎁 تم تجديد الاشتراك مجاناً",
+          message: `تم تجديد اشتراك ${organizationName} مجاناً من صاحب الموقع لمدة ${months} شهر.`,
+          type: "sub_free_grant",
+        });
       }
       toast.success(`تم تحديث الاشتراك المجاني لمدة ${months} شهر`);
       setGrantOpen(false);
