@@ -208,14 +208,17 @@ export default function FilesPage() {
       <div className="space-y-3">
         {files.map(file => (
           <div key={file.id} className="glass-panel p-4 flex items-center justify-between animate-slide-in">
-            <div className="flex items-center gap-3">
-              <FileStack className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-sm font-medium text-foreground">{file.file_name}</p>
+            <div className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onClick={() => setPreviewFile(file)}>
+              <FileStack className="h-5 w-5 text-primary shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{file.file_name}</p>
                 <p className="text-xs text-muted-foreground">{(file.file_size / 1024 / 1024).toFixed(1)} MB • {file.quality === "original" ? "أصلي" : "بروكسي"}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 shrink-0">
+              <Button size="sm" variant="ghost" className="text-primary hover:bg-primary/10" onClick={() => setPreviewFile(file)}>
+                <Eye className="h-4 w-4" />
+              </Button>
               {statusBadge(file.status)}
               {!isAdmin && file.status !== "pending" && (
                 <div className="flex gap-1">
