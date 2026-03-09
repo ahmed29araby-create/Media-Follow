@@ -215,22 +215,25 @@ export default function AdminSubscriptionsPage() {
             expires_at: expiresAt.toISOString(),
           });
 
-          // Notify code owner
+          // Notify code owner (admin only)
           const { data: ownerProfiles } = await supabase
             .from("profiles")
             .select("user_id")
             .eq("organization_id", codeData.organization_id);
-
-          if (ownerProfiles) {
-            for (const p of ownerProfiles) {
-              await supabase.from("notifications").insert({
-                user_id: p.user_id,
-                organization_id: codeData.organization_id,
-                title: "🎉 حصلت على رصيد إحالة!",
-                message: `تم إضافة ${creditAmount} جنيه رصيد لحسابك — شخص استخدم كود الخصم بتاعك. صالح لمدة ${expiryMonths} شهور.`,
-                type: "referral_credit",
-              });
-            }
+          const { data: ownerAdminRoles } = await supabase
+            .from("user_roles")
+            .select("user_id")
+            .eq("role", "admin");
+          const ownerAdminIds = new Set(ownerAdminRoles?.map(r => r.user_id) ?? []);
+          const ownerAdmins = ownerProfiles?.filter(p => ownerAdminIds.has(p.user_id)) ?? [];
+          for (const p of ownerAdmins) {
+            await supabase.from("notifications").insert({
+              user_id: p.user_id,
+              organization_id: codeData.organization_id,
+              title: "🎉 حصلت على رصيد إحالة!",
+              message: `تم إضافة ${creditAmount} جنيه رصيد لحسابك — شخص استخدم كود الخصم بتاعك. صالح لمدة ${expiryMonths} شهور.`,
+              type: "referral_credit",
+            });
           }
         }
       }
