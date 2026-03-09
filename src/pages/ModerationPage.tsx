@@ -168,6 +168,14 @@ export default function ModerationPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      <FilePreviewDialog
+        open={!!previewFile}
+        onOpenChange={(o) => !o && setPreviewFile(null)}
+        storagePath={previewFile?.storage_path ?? null}
+        fileName={previewFile?.file_name ?? ""}
+        drivePath={previewFile?.drive_path}
+      />
     </div>
   );
 }
