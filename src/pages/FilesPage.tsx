@@ -228,7 +228,44 @@ export default function FilesPage() {
     );
   }
 
-  // File list view grouped by subfolders
+  // Subfolder selected - show files in that subfolder
+  if (selectedSubfolder) {
+    const currentGroup = groupedFiles.find(g => g.folderName === selectedSubfolder);
+    const currentFiles = currentGroup?.files ?? [];
+
+    return (
+      <div className="p-6 max-w-2xl mx-auto space-y-6" dir="rtl">
+        <div className="text-center space-y-1 pb-4 border-b border-border">
+          <button
+            onClick={() => setSelectedSubfolder(null)}
+            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mb-2"
+          >
+            <ArrowRight className="h-3 w-3" />
+            العودة للمجلدات
+          </button>
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: '-0.02em' }}>
+            {selectedSubfolder}
+          </h1>
+          <p className="text-sm text-muted-foreground">{currentFiles.length} ملف</p>
+        </div>
+
+        {currentFiles.length === 0 ? (
+          <div className="glass-panel p-8 text-center">
+            <FolderOpen className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">لا توجد ملفات في هذا المجلد</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {currentFiles.map(renderFileItem)}
+          </div>
+        )}
+
+        {renderDialogs()}
+      </div>
+    );
+  }
+
+  // File list view - show subfolders as grid
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6" dir="rtl">
       <div className="text-center space-y-1 pb-4 border-b border-border">
@@ -254,63 +291,31 @@ export default function FilesPage() {
           <FolderOpen className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
           <p className="text-sm text-muted-foreground">لا توجد ملفات بعد</p>
         </div>
+      ) : groupedFiles.length === 1 ? (
+        // Only one folder - show files directly
+        <div className="space-y-2">
+          {groupedFiles[0].files.map(renderFileItem)}
+        </div>
       ) : (
-        <div className="space-y-4">
+        // Multiple folders - show as grid
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {groupedFiles.map(group => (
-            <Collapsible
+            <button
               key={group.folderName}
-              open={openFolders[group.folderName] !== false}
-              onOpenChange={() => toggleFolder(group.folderName)}
+              onClick={() => setSelectedSubfolder(group.folderName)}
+              className="glass-panel p-5 text-center hover:bg-secondary/60 transition-colors cursor-pointer group"
             >
-              <CollapsibleTrigger className="w-full flex items-center gap-2 p-3 rounded-lg bg-secondary/40 hover:bg-secondary/60 transition-colors">
-                <ChevronDown className={cn(
-                  "h-4 w-4 text-muted-foreground transition-transform",
-                  openFolders[group.folderName] === false && "-rotate-90"
-                )} />
-                <Folder className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground flex-1 text-right" dir="ltr">{group.folderName}</span>
-                <span className="text-xs text-muted-foreground">{group.files.length} ملف</span>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-2 mt-2 pr-2">
-                {group.files.map(renderFileItem)}
-              </CollapsibleContent>
-            </Collapsible>
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 mx-auto mb-3 group-hover:bg-primary/20 transition-colors">
+                <FolderOpen className="h-7 w-7 text-primary" />
+              </div>
+              <p className="text-xs font-bold text-foreground mb-0.5" dir="ltr">{group.folderName}</p>
+              <p className="text-[10px] text-muted-foreground">{group.files.length} ملف</p>
+            </button>
           ))}
         </div>
       )}
 
-      <Dialog open={editDialog.open} onOpenChange={o => setEditDialog({ open: o, file: editDialog.file })}>
-        <DialogContent className="bg-card border-border" dir="rtl">
-          <DialogHeader><DialogTitle className="text-foreground">طلب إعادة تسمية</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2"><Label>الاسم الجديد</Label><Input value={newName} onChange={e => setNewName(e.target.value)} /></div>
-            <div className="space-y-2"><Label>السبب</Label><Textarea value={reason} onChange={e => setReason(e.target.value)} placeholder="لماذا تحتاج هذا التغيير؟" /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialog({ open: false, file: null })}>إلغاء</Button>
-            <Button onClick={() => editDialog.file && submitRequest("edit", editDialog.file.id)}>إرسال الطلب</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={deleteDialog.open} onOpenChange={o => setDeleteDialog({ open: o, file: deleteDialog.file })}>
-        <DialogContent className="bg-card border-border" dir="rtl">
-          <DialogHeader><DialogTitle className="text-foreground">طلب حذف</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">طلب حذف <strong className="text-foreground">{deleteDialog.file?.file_name}</strong>؟</p>
-          <div className="space-y-2"><Label>السبب</Label><Textarea value={reason} onChange={e => setReason(e.target.value)} placeholder="لماذا يجب حذف هذا الملف؟" /></div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialog({ open: false, file: null })}>إلغاء</Button>
-            <Button variant="destructive" onClick={() => deleteDialog.file && submitRequest("delete", deleteDialog.file.id)}>إرسال الطلب</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <FilePreviewDialog
-        open={!!previewFile}
-        onOpenChange={(o) => !o && setPreviewFile(null)}
-        storagePath={previewFile?.storage_path ?? null}
-        fileName={previewFile?.file_name ?? ""}
-        drivePath={previewFile?.drive_path}
-      />
+      {renderDialogs()}
     </div>
   );
 }
