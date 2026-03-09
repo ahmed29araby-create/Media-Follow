@@ -276,21 +276,24 @@ export default function AdminSubscriptionsPage() {
       .update({ status: "rejected", reviewed_by: user?.id, reviewed_at: new Date().toISOString() })
       .eq("id", payment.id);
 
-    const { data: profiles } = await supabase
+    const { data: rejProfiles } = await supabase
       .from("profiles")
       .select("user_id")
       .eq("organization_id", payment.organization_id);
-
-    if (profiles) {
-      for (const p of profiles) {
-        await supabase.from("notifications").insert({
-          user_id: p.user_id,
-          organization_id: payment.organization_id,
-          title: "❌ تم رفض طلب الاشتراك",
-          message: "تم رفض طلب الاشتراك. يرجى التأكد من التحويل وإعادة المحاولة.",
-          type: "sub_rejected",
-        });
-      }
+    const { data: rejAdminRoles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin");
+    const rejAdminIds = new Set(rejAdminRoles?.map(r => r.user_id) ?? []);
+    const rejAdmins = rejProfiles?.filter(p => rejAdminIds.has(p.user_id)) ?? [];
+    for (const p of rejAdmins) {
+      await supabase.from("notifications").insert({
+        user_id: p.user_id,
+        organization_id: payment.organization_id,
+        title: "❌ تم رفض طلب الاشتراك",
+        message: "تم رفض طلب الاشتراك. يرجى التأكد من التحويل وإعادة المحاولة.",
+        type: "sub_rejected",
+      });
     }
 
     toast.success("تم رفض طلب الدفع");
