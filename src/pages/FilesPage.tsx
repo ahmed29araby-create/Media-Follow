@@ -23,16 +23,15 @@ interface MemberFolder {
   file_count: number;
 }
 
-interface GroupedFiles {
+interface SubfolderGroup {
   folderName: string;
   files: FileRow[];
 }
 
-function groupFilesBySubfolder(fileList: FileRow[]): GroupedFiles[] {
+function groupFilesBySubfolder(fileList: FileRow[]): SubfolderGroup[] {
   const grouped: Record<string, FileRow[]> = {};
   fileList.forEach(file => {
     const parts = file.file_path.split("/");
-    // path format: mainFolder/subfolder/filename or mainFolder/filename
     const subfolder = parts.length > 2 ? parts[1] : "المجلد الرئيسي";
     if (!grouped[subfolder]) grouped[subfolder] = [];
     grouped[subfolder].push(file);
@@ -55,20 +54,9 @@ export default function FilesPage() {
   const [reason, setReason] = useState("");
   const [previewFile, setPreviewFile] = useState<FileRow | null>(null);
   const [memberName, setMemberName] = useState("");
-  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
+  const [selectedSubfolder, setSelectedSubfolder] = useState<string | null>(null);
 
   const groupedFiles = useMemo(() => groupFilesBySubfolder(files), [files]);
-
-  const toggleFolder = (name: string) => {
-    setOpenFolders(prev => ({ ...prev, [name]: !prev[name] }));
-  };
-
-  // Initialize all folders as open
-  useEffect(() => {
-    const initial: Record<string, boolean> = {};
-    groupedFiles.forEach(g => { initial[g.folderName] = true; });
-    setOpenFolders(initial);
-  }, [groupedFiles.length]);
 
   const fetchFolders = async () => {
     if (!organizationId) return;
