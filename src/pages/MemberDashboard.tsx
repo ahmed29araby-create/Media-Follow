@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, Clock, CheckCircle, XCircle, DollarSign, Film, FolderOpen } from "lucide-react";
+import { Upload, Clock, CheckCircle, XCircle, DollarSign, FolderOpen, Folder } from "lucide-react";
 
 export default function MemberDashboard() {
   const { user, organizationName } = useAuth();
