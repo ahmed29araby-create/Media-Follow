@@ -2,19 +2,21 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, Clock, CheckCircle, XCircle, DollarSign, Film, FolderOpen } from "lucide-react";
+import { Upload, Clock, CheckCircle, XCircle, DollarSign, FolderOpen, Folder } from "lucide-react";
 
 export default function MemberDashboard() {
   const { user, organizationName } = useAuth();
   const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, total: 0, earnings: 0, pricePerVideo: 0 });
   const [folderName, setFolderName] = useState("uploads");
+  const [subfolders, setSubfolders] = useState<{ id: string; folder_name: string }[]>([]);
 
   useEffect(() => {
     if (!user) return;
-    const fetchStats = async () => {
-      const [filesRes, settingsRes] = await Promise.all([
+    const fetchData = async () => {
+      const [filesRes, settingsRes, subfoldersRes] = await Promise.all([
         supabase.from("files").select("status").eq("user_id", user.id),
         supabase.from("member_settings").select("price_per_video, folder_name").eq("user_id", user.id).single(),
+        supabase.from("member_subfolders").select("id, folder_name").eq("user_id", user.id).order("created_at", { ascending: true }),
       ]);
 
       const files = filesRes.data ?? [];
@@ -22,6 +24,7 @@ export default function MemberDashboard() {
       const approved = files.filter(f => f.status === "approved").length;
 
       setFolderName(settingsRes.data?.folder_name ?? "uploads");
+      setSubfolders(subfoldersRes.data ?? []);
       setStats({
         pending: files.filter(f => f.status === "pending").length,
         approved,
@@ -31,7 +34,7 @@ export default function MemberDashboard() {
         pricePerVideo: price,
       });
     };
-    fetchStats();
+    fetchData();
   }, [user]);
 
   const cards = [
@@ -103,9 +106,23 @@ export default function MemberDashboard() {
               <p className="text-lg font-bold text-foreground" dir="ltr">{folderName}</p>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">
-            جميع الملفات التي ترفعها ستظهر في هذا المجلد
-          </p>
+          {subfolders.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">المجلدات الفرعية:</p>
+              <div className="flex flex-wrap gap-2">
+                {subfolders.map(sf => (
+                  <div key={sf.id} className="flex items-center gap-1.5 text-xs bg-secondary/50 px-2 py-1 rounded-md">
+                    <Folder className="h-3 w-3 text-primary" />
+                    <span dir="ltr">{sf.folder_name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              يمكنك إنشاء مجلدات فرعية من صفحة الرفع
+            </p>
+          )}
         </div>
       </div>
     </div>

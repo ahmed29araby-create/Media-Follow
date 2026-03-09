@@ -1,12 +1,18 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Upload, Film, Loader2, HardDrive, Zap, X } from "lucide-react";
+import { Upload, Film, Loader2, HardDrive, Zap, X, FolderPlus, Folder, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+
+interface Subfolder {
+  id: string;
+  folder_name: string;
+}
 
 export default function UploadPage() {
   const { user, organizationId } = useAuth();
@@ -14,12 +20,20 @@ export default function UploadPage() {
   const [quality, setQuality] = useState<"original" | "proxy">("original");
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const [folderName, setFolderName] = useState("uploads");
+  const [mainFolder, setMainFolder] = useState("uploads");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSpeed, setUploadSpeed] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const xhrRef = useRef<XMLHttpRequest | null>(null);
+
+  // Subfolders state
+  const [subfolders, setSubfolders] = useState<Subfolder[]>([]);
+  const [selectedSubfolder, setSelectedSubfolder] = useState<string>("");
+  const [showNewFolder, setShowNewFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const [showFolderDropdown, setShowFolderDropdown] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -28,8 +42,48 @@ export default function UploadPage() {
       .select("folder_name")
       .eq("user_id", user.id)
       .single()
-      .then(({ data }) => { if (data) setFolderName(data.folder_name); });
+      .then(({ data }) => { if (data) setMainFolder(data.folder_name); });
+
+    loadSubfolders();
   }, [user]);
+
+  const loadSubfolders = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("member_subfolders")
+      .select("id, folder_name")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true });
+    setSubfolders(data ?? []);
+  };
+
+  const createSubfolder = async () => {
+    const name = newFolderName.trim();
+    if (!name) { toast.error("أدخل اسم المجلد", { id: "folder-name-required" }); return; }
+    if (!organizationId) return;
+    setCreatingFolder(true);
+    const { data, error } = await supabase
+      .from("member_subfolders")
+      .insert({ user_id: user!.id, organization_id: organizationId, folder_name: name })
+      .select("id, folder_name")
+      .single();
+    if (error) {
+      if (error.code === "23505") toast.error("يوجد مجلد بهذا الاسم بالفعل", { id: "folder-exists" });
+      else toast.error(error.message);
+    } else {
+      toast.success(`تم إنشاء المجلد "${name}"`);
+      setSubfolders(prev => [...prev, data]);
+      setSelectedSubfolder(name);
+      setNewFolderName("");
+      setShowNewFolder(false);
+    }
+    setCreatingFolder(false);
+  };
+
+  const getUploadPath = () => {
+    if (selectedSubfolder) return `${mainFolder}/${selectedSubfolder}`;
+    return mainFolder;
+  };
 
   const handleUpload = async () => {
     if (!file || !user) return;
@@ -41,32 +95,25 @@ export default function UploadPage() {
     const fileExtension = file.name.split('.').pop();
     const safeFileName = crypto.randomUUID() + (fileExtension ? `.${fileExtension}` : '');
     const storagePath = `${user.id}/${Date.now()}_${safeFileName}`;
+    const filePath = `${getUploadPath()}/${file.name}`;
 
     try {
-      // Get session for auth token
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("يرجى تسجيل الدخول أولاً");
-        setUploading(false);
-        return;
-      }
+      if (!session) { toast.error("يرجى تسجيل الدخول أولاً"); setUploading(false); return; }
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const uploadUrl = `${supabaseUrl}/storage/v1/object/pending_uploads/${storagePath}`;
 
-      // Use XMLHttpRequest for progress tracking
       const uploaded = await new Promise<boolean>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhrRef.current = xhr;
-        let startTime = Date.now();
         let lastLoaded = 0;
-        let lastTime = startTime;
+        let lastTime = Date.now();
 
         xhr.upload.addEventListener("progress", (e) => {
           if (e.lengthComputable) {
             const percent = Math.round((e.loaded / e.total) * 100);
             setUploadProgress(percent);
-
             const now = Date.now();
             const elapsed = (now - lastTime) / 1000;
             if (elapsed > 0.5) {
@@ -81,18 +128,12 @@ export default function UploadPage() {
         });
 
         xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(true);
-          } else {
-            try {
-              const err = JSON.parse(xhr.responseText);
-              reject(new Error(err.message || err.error || `خطأ ${xhr.status}`));
-            } catch {
-              reject(new Error(`خطأ في الرفع: ${xhr.status}`));
-            }
+          if (xhr.status >= 200 && xhr.status < 300) resolve(true);
+          else {
+            try { const err = JSON.parse(xhr.responseText); reject(new Error(err.message || err.error || `خطأ ${xhr.status}`)); }
+            catch { reject(new Error(`خطأ في الرفع: ${xhr.status}`)); }
           }
         });
-
         xhr.addEventListener("error", () => reject(new Error("فشل الاتصال بالخادم")));
         xhr.addEventListener("abort", () => reject(new Error("تم إلغاء الرفع")));
 
@@ -103,16 +144,12 @@ export default function UploadPage() {
         xhr.send(file);
       });
 
-      if (!uploaded) {
-        setUploading(false);
-        return;
-      }
+      if (!uploaded) { setUploading(false); return; }
 
-      // Insert file record in DB
       const { error: dbError } = await supabase.from("files").insert({
         user_id: user.id,
         file_name: file.name,
-        file_path: `${folderName}/${file.name}`,
+        file_path: filePath,
         file_size: file.size,
         quality,
         status: "pending",
@@ -120,16 +157,10 @@ export default function UploadPage() {
         organization_id: organizationId,
       });
 
-      if (dbError) {
-        toast.error("فشل تسجيل الملف: " + dbError.message);
-      } else {
-        toast.success("تم الرفع! في انتظار موافقة المسؤول.");
-        setFile(null);
-      }
+      if (dbError) toast.error("فشل تسجيل الملف: " + dbError.message);
+      else { toast.success("تم الرفع! في انتظار موافقة المسؤول."); setFile(null); }
     } catch (err: any) {
-      if (err.message !== "تم إلغاء الرفع") {
-        toast.error("فشل الرفع: " + err.message);
-      }
+      if (err.message !== "تم إلغاء الرفع") toast.error("فشل الرفع: " + err.message);
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -140,10 +171,7 @@ export default function UploadPage() {
   };
 
   const cancelUpload = () => {
-    if (xhrRef.current) {
-      xhrRef.current.abort();
-      toast.info("تم إلغاء الرفع");
-    }
+    if (xhrRef.current) { xhrRef.current.abort(); toast.info("تم إلغاء الرفع"); }
   };
 
   const formatSpeed = (bytesPerSec: number) => {
@@ -163,15 +191,103 @@ export default function UploadPage() {
     e.preventDefault();
     setDragOver(false);
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile?.type.startsWith("video/")) setFile(droppedFile);
-    else toast.error("يرجى إسقاط ملف فيديو");
+    if (droppedFile) setFile(droppedFile);
+    else toast.error("لم يتم التعرف على الملف");
   };
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6" dir="rtl">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">رفع فيديو</h1>
-        <p className="text-sm text-muted-foreground">رفع المحتوى لمراجعة المسؤول • المجلد: <span className="text-foreground font-medium" dir="ltr">{folderName}</span></p>
+        <h1 className="text-2xl font-bold text-foreground">رفع ملف</h1>
+        <p className="text-sm text-muted-foreground">
+          المجلد الرئيسي: <span className="text-foreground font-medium" dir="ltr">{mainFolder}</span>
+          {selectedSubfolder && (
+            <> / <span className="text-primary font-medium" dir="ltr">{selectedSubfolder}</span></>
+          )}
+        </p>
+      </div>
+
+      {/* Subfolder Selector */}
+      <div className="glass-panel p-4 space-y-3">
+        <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">
+          المجلد الفرعي (اختياري)
+        </Label>
+
+        {/* Dropdown */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowFolderDropdown(v => !v)}
+            className="w-full flex items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm text-right hover:bg-accent/30 transition-colors"
+          >
+            <span className="text-foreground flex items-center gap-2">
+              {selectedSubfolder
+                ? <><Folder className="h-4 w-4 text-primary" /><span dir="ltr">{selectedSubfolder}</span></>
+                : <span className="text-muted-foreground">رفع مباشرة في المجلد الرئيسي</span>
+              }
+            </span>
+            <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", showFolderDropdown && "rotate-180")} />
+          </button>
+
+          {showFolderDropdown && (
+            <div className="absolute top-full mt-1 w-full z-10 rounded-md border border-border bg-background shadow-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => { setSelectedSubfolder(""); setShowFolderDropdown(false); }}
+                className={cn(
+                  "w-full text-right px-3 py-2 text-sm hover:bg-accent/30 transition-colors",
+                  !selectedSubfolder && "bg-primary/10 text-primary"
+                )}
+              >
+                المجلد الرئيسي (بدون مجلد فرعي)
+              </button>
+              {subfolders.map(sf => (
+                <button
+                  key={sf.id}
+                  type="button"
+                  onClick={() => { setSelectedSubfolder(sf.folder_name); setShowFolderDropdown(false); }}
+                  className={cn(
+                    "w-full text-right px-3 py-2 text-sm hover:bg-accent/30 transition-colors flex items-center gap-2",
+                    selectedSubfolder === sf.folder_name && "bg-primary/10 text-primary"
+                  )}
+                >
+                  <Folder className="h-4 w-4" />
+                  <span dir="ltr">{sf.folder_name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* New Folder */}
+        {!showNewFolder ? (
+          <button
+            type="button"
+            onClick={() => setShowNewFolder(true)}
+            className="flex items-center gap-2 text-xs text-primary hover:text-primary/80 transition-colors"
+          >
+            <FolderPlus className="h-3.5 w-3.5" />
+            إنشاء مجلد فرعي جديد
+          </button>
+        ) : (
+          <div className="flex gap-2 items-center">
+            <Input
+              value={newFolderName}
+              onChange={e => setNewFolderName(e.target.value)}
+              placeholder="اسم المجلد الجديد"
+              dir="ltr"
+              className="text-left flex-1 h-8 text-sm"
+              onKeyDown={e => { if (e.key === "Enter") createSubfolder(); if (e.key === "Escape") { setShowNewFolder(false); setNewFolderName(""); } }}
+              autoFocus
+            />
+            <Button size="sm" onClick={createSubfolder} disabled={creatingFolder} className="h-8 px-3">
+              {creatingFolder ? <Loader2 className="h-3 w-3 animate-spin" /> : "إنشاء"}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => { setShowNewFolder(false); setNewFolderName(""); }} className="h-8 px-3">
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Quality Toggle */}
@@ -220,7 +336,7 @@ export default function UploadPage() {
           uploading && "pointer-events-none opacity-70"
         )}
       >
-        <input ref={inputRef} type="file" accept="video/*" className="hidden" onChange={(e) => e.target.files?.[0] && setFile(e.target.files[0])} />
+        <input ref={inputRef} type="file" className="hidden" onChange={(e) => e.target.files?.[0] && setFile(e.target.files[0])} />
         {file ? (
           <>
             <Film className="h-10 w-10 text-primary" />
@@ -233,8 +349,8 @@ export default function UploadPage() {
           <>
             <Upload className="h-10 w-10 text-muted-foreground" />
             <div className="text-center">
-              <p className="text-sm font-medium text-foreground">اسحب الفيديو هنا أو اضغط للتصفح</p>
-              <p className="text-xs text-muted-foreground">يدعم جميع صيغ الفيديو</p>
+              <p className="text-sm font-medium text-foreground">اسحب الملف هنا أو اضغط للتصفح</p>
+              <p className="text-xs text-muted-foreground">فيديو، صورة، أو أي ملف آخر</p>
             </div>
           </>
         )}
