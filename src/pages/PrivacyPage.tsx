@@ -48,6 +48,9 @@ export default function PrivacyPage() {
   const [editOrgEmail, setEditOrgEmail] = useState("");
   const [savingOrg, setSavingOrg] = useState(false);
 
+  const [userEmail, setUserEmail] = useState(user?.email || "");
+  const [editUserEmail, setEditUserEmail] = useState(user?.email || "");
+  
   const [editDisplayName, setEditDisplayName] = useState("");
   const [savingDisplayName, setSavingDisplayName] = useState(false);
 
