@@ -24,6 +24,7 @@ import SubscriptionPage from "@/pages/SubscriptionPage";
 import AdminSubscriptionsPage from "@/pages/AdminSubscriptionsPage";
 import FinancialReportsPage from "@/pages/FinancialReportsPage";
 import OffersPage from "@/pages/OffersPage";
+import RegisterOrganizationPage from "@/pages/RegisterOrganizationPage";
 
 const queryClient = new QueryClient();
 
