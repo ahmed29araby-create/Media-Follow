@@ -11,6 +11,8 @@ interface ReferralInfo {
   totalCredits: number;
   availableCredits: number;
   referralCount: number;
+  ownerPercentage: number;
+  userPercentage: number;
 }
 
 export default function ReferralCard() {
