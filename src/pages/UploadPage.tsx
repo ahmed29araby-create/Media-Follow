@@ -30,7 +30,9 @@ export default function UploadPage() {
     if (!file || !user) return;
     setUploading(true);
 
-    const storagePath = `${user.id}/${Date.now()}_${file.name}`;
+    const fileExtension = file.name.split('.').pop();
+    const safeFileName = crypto.randomUUID() + (fileExtension ? `.${fileExtension}` : '');
+    const storagePath = `${user.id}/${Date.now()}_${safeFileName}`;
     const { error: storageError } = await supabase.storage
       .from("pending_uploads")
       .upload(storagePath, file);
